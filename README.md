@@ -1,0 +1,1 @@
+# easy-reading-firefox-extension
