@@ -1,0 +1,59 @@
+{
+  "manifest_version": 2,
+  "name": "Easy Reader2",
+  "version": "1.0",
+
+  "applications": {
+    "gecko": {
+      "id": "easyReader2@example.com",
+      "strict_min_version": "42.0"
+    }
+  },
+
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "activeTab",
+    "tabs",
+    "contextMenus",
+    "<all_urls>",
+    "identity",
+    "notifications",
+    "*://www.googleapis.com/*",
+    "*://accounts.google.com/*"
+  ],
+  "content_security_policy": "script-src 'self' https://localhost https://easyreading-cloud.eu/ https://dev.easyreading-cloud.eu/ https://dev-easy-reading.eu-gb.mybluemix.net/ https://easy-reading.eu-gb.mybluemix.net/ https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/ https://apis.google.com/js/; object-src 'self'",
+  "background": {
+    "scripts": [
+      "lib/jquery/jquery.js",
+      "background/easy-reading.js",
+      "background/silent-login.js",
+      "background/script-manager.js",
+      "background/cloud-web-socket.js",
+      "background/background-script.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/jquery/jquery.js",
+        "content/content-script.js"
+      ]
+    }
+  ],
+  "options_ui": {
+    "page": "background/config/config.html",
+    "open_in_tab": true,
+    "browser_style": false
+  },
+  "browser_action": {
+    "default_icon": {
+      "100": "assets/logo/logo100.png"
+    },
+    "default_title": "Easy Reading"
+
+  }
+}
