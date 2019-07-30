@@ -60,7 +60,6 @@ var cloudWebSocket = {
     sendMessage: function (message) {
 
         if (this.webSocket) {
-            console.log("ws: send message-sent");
             this.webSocket.send(message);
         }
     },
@@ -76,8 +75,6 @@ var cloudWebSocket = {
 
         if(this.isConnected){
             this.sendMessage(JSON.stringify({type: "ping"}));
-
-            console.log("ping");
             setTimeout(function () {
                 cloudWebSocket.ping();
             }, 10000);

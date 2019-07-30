@@ -76,7 +76,7 @@ var background = {
 
                     tabs.forEach(async (tab) => {
 
-                        if (tab.url !== "about:debugging" && !configTabIds.includes(tab.id)) {
+                        if (!easyReading.isIgnoredUrl(tab.url) && tab.url !== "about:debugging" && !configTabIds.includes(tab.id)) {
                             if (tab.status === "complete") {
 
                                 if (scriptManager.debugMode) {
@@ -119,6 +119,7 @@ var background = {
                 scriptManager.reset();
                 scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url, true);
 
+                console.log("user update");
                 let message = {
                     type: receivedMessage.type,
                     data: JSON.parse(JSON.stringify(scriptManager)),
@@ -293,11 +294,17 @@ var background = {
 browser.runtime.onConnect.addListener(function (p) {
     //if (scriptManager.profileReceived) {
     if (true) {
+
+        if(easyReading.isIgnoredUrl(p.sender.tab.url)){
+            return;
+        }
         //Store port to content script
         addPort(p);
         // ports[p.sender.tab.id] = p;
         var currentPort = p;
         currentPort.onMessage.addListener(async function (m) {
+
+
 
             switch (m.type) {
                 case "cloudRequest":
@@ -309,16 +316,27 @@ browser.runtime.onConnect.addListener(function (p) {
                     cloudWebSocket.sendMessage(JSON.stringify(m));
                     break;
                 case "getUserProfile":
+                    console.log("GETTING PROFLE");
                     if (scriptManager.profileReceived) {
                         if (scriptManager.debugMode) {
                             m.data = JSON.parse(JSON.stringify(scriptManager));
                             currentPort.postMessage(m);
                         } else {
                             for (let i = 0; i < scriptManager.contentScripts.length; i++) {
-                                await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
+                                try{
+                                    await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
+                                }catch (error) {
+                                    console.log(error);
+                                }
+
                             }
                             for (let i = 0; i < scriptManager.contentCSS.length; i++) {
-                                await browser.tabs.insertCSS(p.sender.tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
+                                try{
+                                    await browser.tabs.insertCSS(p.sender.tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
+                                }catch (error) {
+                                    console.log(error);
+                                }
+
                             }
 
                             m.data = JSON.parse(JSON.stringify(scriptManager));

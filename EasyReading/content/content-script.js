@@ -39,7 +39,7 @@ let contentScriptController = {
                     this.initDebugMode(injection);
                 }else{
                     $(document).ready(function () {
-                        console.log("starting up");
+                        console.log("starting  up");
                         easyReading.startup( contentScriptController.scriptManager.uiCollection);
                     });
 
@@ -55,10 +55,15 @@ let contentScriptController = {
                     let injection = {scripts: this.scriptManager.updatedRemoteScripts, styleSheets: this.scriptManager.updatedRemoteCSS};
                     this.initDebugMode(injection);
                 }else{
-                    easyReading.shutdown();
+
+
                     $(document).ready(function () {
-                        console.log("starting up");
-                        easyReading.startup( contentScriptController.scriptManager.uiCollection);
+                        if (typeof easyReading !== 'undefined') {
+                            console.log("starting up");
+                            easyReading.shutdown();
+                            easyReading.startup( contentScriptController.scriptManager.uiCollection);
+                        }
+
                     });
 
                 }
