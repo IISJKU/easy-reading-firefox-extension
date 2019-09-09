@@ -41,9 +41,12 @@ let contentScriptController = {
                     $(document).ready(function () {
                         console.log("starting  up");
                         easyReading.startup( contentScriptController.scriptManager.uiCollection);
+
+
                     });
 
                 }
+                this.portToBackGroundScript.postMessage({type: "startUpComplete"});
 
 
                 break;
@@ -66,7 +69,10 @@ let contentScriptController = {
 
                     });
 
+
+
                 }
+                this.portToBackGroundScript.postMessage({type: "startUpComplete"});
                 break;
             case "userLogout":{
 

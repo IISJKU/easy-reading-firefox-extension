@@ -1,4 +1,4 @@
-var ports = [];
+//var ports = [];
 
 var background = {
     errorMsg: null,
@@ -44,7 +44,7 @@ var background = {
                 //Try silent login
                 background.uuid = receivedMessage.result;
 
-                silentLogin.login("https://"+cloudWebSocket.config.url, receivedMessage.result);
+                silentLogin.login("https://" + cloudWebSocket.config.url, receivedMessage.result);
 
                 break;
             case "userLoginResult":
@@ -116,6 +116,7 @@ var background = {
 
                 break;
             case "userUpdateResult":
+
                 scriptManager.reset();
                 scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url, true);
 
@@ -127,31 +128,49 @@ var background = {
 
                 if (scriptManager.debugMode) {
 
-                    for (let i = 0; i < ports.length; i++) {
+                    for (let i = 0; i < portManager.ports.length; i++) {
+                        if (portManager.ports[i].startUpComplete) {
+                            portManager.ports[i].p.postMessage(message);
+                        }
 
-                        ports[i].postMessage(message);
                     }
 
                 } else {
-                    for (let i = 0; i < scriptManager.updatedContentScripts.length; i++) {
-                        try {
-                            await browser.tabs.executeScript({code: (atob(scriptManager.updatedContentScripts[i].source))});
-                        } catch (error) {
-                            console.log(error);
+
+                    for (let k = 0; k < portManager.ports.length; k++) {
+
+                        console.log(portManager.ports[k].p.sender.tab.url.indexOf("client/function-overview") !== -1);
+
+                        //! HACK: needs to be fixed. custom functions do not load sometimes without this. due to race condition.....
+                        if (portManager.ports[k].p.sender.tab.status === "loading" && portManager.ports[k].p.sender.tab.url.indexOf("client/function-overview") !== -1) {
+                            continue;
                         }
 
-                    }
-                    for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
-                        try {
-                            await browser.tabs.insertCSS({code: (atob(scriptManager.updatedContentCSS[i].css))});
-                        } catch (error) {
-                            console.log(error);
+                        if (portManager.ports[k].startUpComplete) {
+                            let tabId = portManager.ports[k].p.sender.tab.id;
+
+                            for (let i = 0; i < scriptManager.updatedContentScripts.length; i++) {
+                                try {
+                                    await browser.tabs.executeScript(tabId, {code: (atob(scriptManager.updatedContentScripts[i].source))});
+                                } catch (error) {
+                                    console.log(error);
+                                }
+
+                            }
+                            for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
+                                try {
+                                    await browser.tabs.insertCSS(tabId, {code: (atob(scriptManager.updatedContentCSS[i].css))});
+                                } catch (error) {
+                                    console.log(error);
+                                }
+
+                            }
+
+                            portManager.ports[k].p.postMessage(message);
+
+
                         }
 
-                    }
-                    for (let i = 0; i < ports.length; i++) {
-
-                        ports[i].postMessage(message);
                     }
                 }
 
@@ -160,7 +179,8 @@ var background = {
 
                 break;
             case "cloudRequestResult":
-                getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
+                portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
+                // getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
                 // ports[receivedMessage.data.tab_id].postMessage(receivedMessage);
                 break;
             case "userLogout" : {
@@ -220,10 +240,10 @@ var background = {
         let tabs = await browser.tabs.query({});
 
         tabs.forEach((tab) => {
-            if (tab.url.indexOf("https://"+cloudWebSocket.config.url + "/client/") !== -1) {
+            if (tab.url.indexOf("https://" + cloudWebSocket.config.url + "/client/") !== -1) {
                 configTabs.push(tab);
-            }else if (tab.url.indexOf(backgroundUrl) !== -1) {
-                if(includeOptionsPage){
+            } else if (tab.url.indexOf(backgroundUrl) !== -1) {
+                if (includeOptionsPage) {
                     configTabs.push(tab);
                 }
 
@@ -273,14 +293,13 @@ var background = {
         });
 
 
-
         let configTabs = await background.getOpenConfigTabs();
         configTabs.forEach(async (tab) => {
             browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
         });
 
         let activeOptionPages = background.getActiveOptionPages();
-        activeOptionPages.forEach((optionsPage) =>{
+        activeOptionPages.forEach((optionsPage) => {
             optionsPage.updateStatus(errorMsg);
         });
 
@@ -295,15 +314,14 @@ browser.runtime.onConnect.addListener(function (p) {
     //if (scriptManager.profileReceived) {
     if (true) {
 
-        if(easyReading.isIgnoredUrl(p.sender.tab.url)){
+        if (easyReading.isIgnoredUrl(p.sender.tab.url)) {
             return;
         }
         //Store port to content script
-        addPort(p);
+        portManager.addPort(p);
         // ports[p.sender.tab.id] = p;
         var currentPort = p;
         currentPort.onMessage.addListener(async function (m) {
-
 
 
             switch (m.type) {
@@ -323,17 +341,17 @@ browser.runtime.onConnect.addListener(function (p) {
                             currentPort.postMessage(m);
                         } else {
                             for (let i = 0; i < scriptManager.contentScripts.length; i++) {
-                                try{
+                                try {
                                     await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
-                                }catch (error) {
+                                } catch (error) {
                                     console.log(error);
                                 }
 
                             }
                             for (let i = 0; i < scriptManager.contentCSS.length; i++) {
-                                try{
+                                try {
                                     await browser.tabs.insertCSS(p.sender.tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
-                                }catch (error) {
+                                } catch (error) {
                                     console.log(error);
                                 }
 
@@ -346,11 +364,19 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
 
                     break;
+
+                case "startUpComplete":
+
+                    let portInfo = portManager.getPort(p.sender.tab.id);
+                    portInfo.startUpComplete = true;
+                    console.log(p.sender.tab.id);
+                    console.log("startup complete");
+                    break;
             }
         });
 
         currentPort.onDisconnect.addListener((p) => {
-            removePort(p);
+            portManager.removePort(p);
             if (p.error) {
                 console.log(`Disconnected due to an error: ${p.error.message}`);
             }
@@ -360,6 +386,47 @@ browser.runtime.onConnect.addListener(function (p) {
 
 });
 
+let portManager = {
+    ports: [],
+    addPort: function (p) {
+        let portInfo = {
+            p: p,
+            startUpComplete: false,
+        };
+
+        for (let i = 0; i < portManager.ports.length; i++) {
+            if (portManager.ports[i].p.sender.tab.id === p.sender.tab.id) {
+
+                portManager.ports[i] = portInfo;
+                console.log("adding new port");
+                return;
+            }
+        }
+        portManager.ports.push(portInfo);
+    },
+    removePort: function (p) {
+        for (let i = 0; i < portManager.ports.length; i++) {
+            if (portManager.ports[i].p === p) {
+                portManager.ports.splice(i, 1);
+                return;
+            }
+        }
+
+    },
+
+    getPort: function (tab_id) {
+        for (let i = 0; i < portManager.ports.length; i++) {
+            if (portManager.ports[i].p.sender.tab.id === tab_id) {
+                return portManager.ports[i];
+            }
+        }
+
+    }
+
+
+};
+
+/*
 
 function addPort(p) {
     for (let i = 0; i < ports.length; i++) {
@@ -391,6 +458,7 @@ function getPort(window_id, tab_id) {
         }
     }
 }
+*/
 
 browser.browserAction.onClicked.addListener(async () => {
 

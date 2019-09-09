@@ -2,13 +2,14 @@ var easyReading = {
         config: null,
         cloudEndpoints: [
             {
-                description: "AWS Prod server",
+                description: "Prod server",
                 url: "easyreading-cloud.eu",
             },
             {
-                description: "AWS DEV server",
+                description: "DEV server",
                 url: "dev.easyreading-cloud.eu",
             },
+            /*
             {
                 description: "Production server",
                 url: "easy-reading.eu-gb.mybluemix.net",
@@ -16,7 +17,7 @@ var easyReading = {
             {
                 description: "Development server",
                 url: "dev-easy-reading.eu-gb.mybluemix.net",
-            },
+            },*/
             {
                 description: "Localhost",
                 url: "localhost:8080"
