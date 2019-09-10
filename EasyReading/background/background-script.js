@@ -126,10 +126,13 @@ var background = {
                     data: JSON.parse(JSON.stringify(scriptManager)),
                 };
 
+
                 if (scriptManager.debugMode) {
 
                     for (let i = 0; i < portManager.ports.length; i++) {
                         if (portManager.ports[i].startUpComplete) {
+
+                            message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[i].p.sender.tab.id);
                             portManager.ports[i].p.postMessage(message);
                         }
 
@@ -165,7 +168,7 @@ var background = {
                                 }
 
                             }
-
+                            message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);
                             portManager.ports[k].p.postMessage(message);
 
 
@@ -323,6 +326,7 @@ browser.runtime.onConnect.addListener(function (p) {
         var currentPort = p;
         currentPort.onMessage.addListener(async function (m) {
 
+            console.log(m);
 
             switch (m.type) {
                 case "cloudRequest":
@@ -338,6 +342,8 @@ browser.runtime.onConnect.addListener(function (p) {
                     if (scriptManager.profileReceived) {
                         if (scriptManager.debugMode) {
                             m.data = JSON.parse(JSON.stringify(scriptManager));
+                            m.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(p.sender.tab.id);
+                            console.log(m);
                             currentPort.postMessage(m);
                         } else {
                             for (let i = 0; i < scriptManager.contentScripts.length; i++) {
@@ -358,6 +364,7 @@ browser.runtime.onConnect.addListener(function (p) {
                             }
 
                             m.data = JSON.parse(JSON.stringify(scriptManager));
+                            m.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(p.sender.tab.id);
                             currentPort.postMessage(m);
 
                         }
@@ -371,6 +378,19 @@ browser.runtime.onConnect.addListener(function (p) {
                     portInfo.startUpComplete = true;
                     console.log(p.sender.tab.id);
                     console.log("startup complete");
+                    break;
+
+                case "saveUiConfigurationForTab": {
+
+                    tabUiConfigManager.addConfig(p.sender.tab.id,
+                        {
+                            id: m.id,
+                            configuration: m.configuration,
+                        });
+
+
+                }
+
                     break;
             }
         });
@@ -423,6 +443,66 @@ let portManager = {
 
     }
 
+
+};
+
+browser.tabs.onRemoved.addListener(function (tabId, removeInfo) {
+    tabUiConfigManager.removeTab(tabId);
+});
+
+browser.tabs.onCreated.addListener(function (tab) {
+
+    tabUiConfigManager.addTab(tab.id)
+
+});
+
+let tabUiConfigManager = {
+    tabConfigs: [],
+    addTab: function (tabID) {
+        this.tabConfigs.push({
+            tabID: tabID,
+            uiConfigurations: [],
+        })
+    },
+    removeTab: function (tabID) {
+        for (let i = 0; i < this.tabConfigs.length; i++) {
+            if (this.tabConfigs[i].tabID === tabID) {
+                this.tabConfigs.splice(i, 1);
+
+                return;
+            }
+        }
+    },
+
+    addConfig: function (tabID, configuration) {
+        for (let i = 0; i < this.tabConfigs.length; i++) {
+            if (this.tabConfigs[i].tabID === tabID) {
+
+                //Try to update...
+                for (let j = 0; j < this.tabConfigs[i].uiConfigurations.length; j++) {
+                    if (this.tabConfigs[i].uiConfigurations[j].id === configuration.id) {
+                        this.tabConfigs[i].uiConfigurations[j] = configuration;
+                        return;
+                    }
+                }
+
+                this.tabConfigs[i].uiConfigurations.push(configuration);
+
+
+            }
+        }
+    },
+
+    getConfigForTab(tabID) {
+        for (let i = 0; i < this.tabConfigs.length; i++) {
+            if (this.tabConfigs[i].tabID === tabID) {
+                return this.tabConfigs[i].uiConfigurations;
+
+            }
+        }
+
+        return [];
+    }
 
 };
 
