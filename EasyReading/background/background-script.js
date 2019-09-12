@@ -291,54 +291,50 @@ var background = {
 
 
 browser.runtime.onConnect.addListener(function (p) {
-    //if (scriptManager.profileReceived) {
-    if (true) {
-        //Store port to content script
-        addPort(p);
-        // ports[p.sender.tab.id] = p;
-        var currentPort = p;
-        currentPort.onMessage.addListener(async function (m) {
+    //Store port to content script
+    addPort(p);
+    // ports[p.sender.tab.id] = p;
+    var currentPort = p;
+    currentPort.onMessage.addListener(async function (m) {
 
-            switch (m.type) {
-                case "cloudRequest":
-                    //Add window id and tab id to the request, so that it can be send back to the original content script
-                    m.windowInfo = {
-                        tabId: p.sender.tab.id,
-                        windowId: p.sender.tab.windowId,
-                    };
-                    cloudWebSocket.sendMessage(JSON.stringify(m));
-                    break;
-                case "getUserProfile":
-                    if (scriptManager.profileReceived) {
-                        if (scriptManager.debugMode) {
-                            m.data = JSON.parse(JSON.stringify(scriptManager));
-                            currentPort.postMessage(m);
-                        } else {
-                            for (let i = 0; i < scriptManager.contentScripts.length; i++) {
-                                await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
-                            }
-                            for (let i = 0; i < scriptManager.contentCSS.length; i++) {
-                                await browser.tabs.insertCSS(p.sender.tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
-                            }
-
-                            m.data = JSON.parse(JSON.stringify(scriptManager));
-                            currentPort.postMessage(m);
-
+        switch (m.type) {
+            case "cloudRequest":
+                //Add window id and tab id to the request, so that it can be send back to the original content script
+                m.windowInfo = {
+                    tabId: p.sender.tab.id,
+                    windowId: p.sender.tab.windowId,
+                };
+                cloudWebSocket.sendMessage(JSON.stringify(m));
+                break;
+            case "getUserProfile":
+                if (scriptManager.profileReceived) {
+                    if (scriptManager.debugMode) {
+                        m.data = JSON.parse(JSON.stringify(scriptManager));
+                        currentPort.postMessage(m);
+                    } else {
+                        for (let i = 0; i < scriptManager.contentScripts.length; i++) {
+                            await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
                         }
+                        for (let i = 0; i < scriptManager.contentCSS.length; i++) {
+                            await browser.tabs.insertCSS(p.sender.tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
+                        }
+
+                        m.data = JSON.parse(JSON.stringify(scriptManager));
+                        currentPort.postMessage(m);
+
                     }
+                }
 
-                    break;
-            }
-        });
+                break;
+        }
+    });
 
-        currentPort.onDisconnect.addListener((p) => {
-            removePort(p);
-            if (p.error) {
-                console.log(`Disconnected due to an error: ${p.error.message}`);
-            }
-        });
-
-    }
+    currentPort.onDisconnect.addListener((p) => {
+        removePort(p);
+        if (p.error) {
+            console.log(`Disconnected due to an error: ${p.error.message}`);
+        }
+    });
 
 });
 

@@ -41,6 +41,8 @@ var trackingWebSocket = {
 
         try {
             // TODO fetch message from asterics and send to reasoner
+            console.log("tracking-ws: message received: " + message);
+            var i = 0;
         } catch (e) {
             console.log("tracking-ws: error on message- " + e);
             throw e; // intentionally re-throw (caught by window.onerror)
@@ -88,3 +90,5 @@ var trackingWebSocket = {
     },
 
 };
+
+trackingWebSocket.initWebSocket();
