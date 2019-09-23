@@ -2,13 +2,14 @@ var easyReading = {
         config: null,
         cloudEndpoints: [
             {
-                description: "AWS Prod server",
+                description: "Prod server",
                 url: "easyreading-cloud.eu",
             },
             {
-                description: "AWS DEV server",
+                description: "DEV server",
                 url: "dev.easyreading-cloud.eu",
             },
+            /*
             {
                 description: "Production server",
                 url: "easy-reading.eu-gb.mybluemix.net",
@@ -16,12 +17,16 @@ var easyReading = {
             {
                 description: "Development server",
                 url: "dev-easy-reading.eu-gb.mybluemix.net",
-            },
+            },*/
             {
                 description: "Localhost",
                 url: "localhost:8080"
             }
         ],
+        ignoredConfigSites: [
+            "/client/function-editor",
+        ],
+
         init: function () {
 
             let gettingConfig = browser.storage.local.get(easyReading.getDefaultConfig());
@@ -73,6 +78,19 @@ var easyReading = {
         updateEndpointIndex: function (index) {
             easyReading.config.cloudEndpointIndex = index;
             easyReading.saveConfig();
+        },
+
+        isIgnoredUrl(url){
+            for(let i=0; i < easyReading.ignoredConfigSites.length; i++){
+
+                let currentURL = easyReading.cloudEndpoints[easyReading.config.cloudEndpointIndex].url;
+                if(url.includes(currentURL+easyReading.ignoredConfigSites[i])){
+                    return true;
+                }
+
+            }
+
+            return false;
         }
 
 

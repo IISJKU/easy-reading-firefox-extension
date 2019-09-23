@@ -41,11 +41,12 @@ var trackingWebSocket = {
 
         try {
             // TODO fetch message from asterics and send to reasoner
+            let action = reasoner.step(message);
+            background.onMessageFromTracking({type: action});
             console.log("tracking-ws: message received: " + message);
-            var i = 0;
         } catch (e) {
             console.log("tracking-ws: error on message- " + e);
-            throw e; // intentionally re-throw (caught by window.onerror)
+            throw e;
         }
     },
 

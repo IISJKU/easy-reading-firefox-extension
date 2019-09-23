@@ -63,21 +63,21 @@ let contentScriptController = {
 
                 }
                 break;
-            case "userLogout":{
-
-
-                if(this.scriptManager.debugMode){
+            case "userLogout":
+                if (this.scriptManager.debugMode) {
                     let event = new CustomEvent("userLogout");
                     document.dispatchEvent(event);
-                }else{
+                } else {
 
                     easyReading.shutdown();
 
                 }
                 this.scriptManager = m.data;
-
-            }
-
+                break;
+            case "askUserNeedsHelp":
+                console.log("Displaying tracking dialog");
+                tracking_dialog.show();
+                break;
         }
     },
     sendMessageToBackgroundScript: function(message) {
@@ -164,6 +164,40 @@ let util ={
         return "https://" + url + '/' + str;
     }
 };
+
+let tracking_dialog = new Noty({
+    id: 'user-tracking-feedback-dialog',
+    type: 'success',
+    text: 'Do you need help?',
+    layout: 'topRight',
+    theme: 'relax',
+    timeout: 3500,
+    progressBar: true,
+    buttons: [
+        Noty.button('Yes',
+            'btn btn-success',
+            function () {
+                tracking_dialog.helpNeeded = true;
+                tracking_dialog.close();
+            }
+        ),
+        Noty.button('No',
+            'btn btn-error',
+            function () {
+                tracking_dialog.helpNeeded = false;
+                tracking_dialog.close();
+            }
+        )
+    ]
+}).on('onClose', function() {
+    if (tracking_dialog.helpNeeded) {
+        console.log('User asked for help');
+        contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpNeeded"});
+    } else {
+        console.log('User rejected help');
+        contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
+    }
+});
 
 contentScriptController.init();
 
