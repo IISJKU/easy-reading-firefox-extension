@@ -42,7 +42,12 @@
       ],
       "js": [
         "lib/jquery/jquery.js",
+        "lib/noty/noty.js",
         "content/content-script.js"
+      ],
+      "css": [
+        "lib/noty/noty.css",
+        "lib/noty/themes/relax.css"
       ]
     }
   ],
