@@ -401,17 +401,19 @@ browser.runtime.onConnect.addListener(function (p) {
                     console.log("startup complete");
                     break;
 
-                case "saveUiConfigurationForTab": {
+                case "saveUiConfigurationForTab":
 
                     tabUiConfigManager.addConfig(p.sender.tab.id,
                         {
                             id: m.id,
                             configuration: m.configuration,
                         });
-
-
-                }
-
+                    break;
+                case "requestHelpNeeded":
+                    console.log('BG: User requested help');
+                    break;
+                case "requestHelpRejected":
+                    console.log('BG: User rejected help');
                     break;
             }
         });

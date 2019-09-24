@@ -166,7 +166,7 @@ let util ={
 };
 
 let tracking_dialog = new Noty({
-    id: 'user-tracking-feedback-dialog',
+    id: 'er-user-tracking-feedback-dialog',
     type: 'success',
     text: 'Do you need help?',
     layout: 'topRight',
@@ -175,14 +175,14 @@ let tracking_dialog = new Noty({
     progressBar: true,
     buttons: [
         Noty.button('Yes',
-            'btn btn-success',
+            'er-tracking-button',
             function () {
                 tracking_dialog.helpNeeded = true;
                 tracking_dialog.close();
             }
         ),
         Noty.button('No',
-            'btn btn-error',
+            'er-tracking-button',
             function () {
                 tracking_dialog.helpNeeded = false;
                 tracking_dialog.close();
@@ -198,6 +198,10 @@ let tracking_dialog = new Noty({
         contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
     }
 });
+
+/*$(document).ready(function() {
+    tracking_dialog.show();
+});*/
 
 contentScriptController.init();
 

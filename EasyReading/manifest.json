@@ -47,7 +47,8 @@
       ],
       "css": [
         "lib/noty/noty.css",
-        "lib/noty/themes/relax.css"
+        "lib/noty/themes/relax.css",
+        "lib/noty/priority.css"
       ]
     }
   ],
