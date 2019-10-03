@@ -26,6 +26,7 @@
   "background": {
     "scripts": [
       "lib/jquery/jquery.js",
+      "lib/tf/tf.min.js",
       "background/easy-reading.js",
       "background/silent-login.js",
       "background/script-manager.js",
