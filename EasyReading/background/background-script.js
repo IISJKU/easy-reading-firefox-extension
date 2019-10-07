@@ -4,6 +4,8 @@ var background = {
     errorMsg: null,
     uuid: null,
     authMethod: null,
+    reasoner: null,
+
     connectToCloud: function (config) {
 
         cloudWebSocket.initWebSocket(config);
@@ -34,7 +36,17 @@ var background = {
         if (optionsPage) {
             optionsPage.updateStatus();
         }
+
+        trackingWebSocket.initWebSocket();
+
     },
+
+    onConnectedToTracking: function (event) {
+        if (this.reasoner) {
+            this.reasoner.active = true;
+        }
+    },
+
     onMessageFromCloud: async function (message) {
 
         let receivedMessage = JSON.parse(message.data);
@@ -115,6 +127,9 @@ var background = {
 
                 }
 
+                if (!this.reasoner) {
+                    this.reasoner = new EasyReadingReasoner();
+                }
 
                 break;
             case "userUpdateResult":
@@ -210,22 +225,37 @@ var background = {
 
     },
 
-    onMessageFromTracking: async function (message) {
-        switch (message.type) {
-            case "askUserNeedsHelp":
-                browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
-                    let tab = tabs[0];
-                    if (tab) {
-                        let port = portManager.getPort(tab.id);
-                        if (port) {
-                            port.p.postMessage(message);
-                        }
-                    } else {
-                        console.log("onMessageFromTracking: No active tab found");
-                    }
+    onDisconnectFromTracking: async function (error) {
+        background.errorMsg = error;
+        this.reasoner.active = false;
+    },
+
+    onMessageFromTracking: async function (json_msg) {
+        if (json_msg && this.reasoner && this.reasoner.active) {
+            try {
+                let message = JSON.parse(json_msg);
+                let action = this.reasoner.step(message);
+                switch (action) {
+                    case "askUserNeedsHelp":
+                        browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
+                                let tab = tabs[0];
+                                if (tab) {
+                                    let port = portManager.getPort(tab.id);
+                                    if (port) {
+                                        port.p.postMessage(message);
+                                    }
+                                } else {
+                                    console.log("onMessageFromTracking: No active tab found");
+                                }
+                            }
+                        );
+                        break;
                 }
-            );
-                break;
+            } catch (error) {
+                if (error instanceof SyntaxError) {
+                    console.log("onMessageFromTracking: received message is not valid JSON!");
+                }
+            }
         }
     },
 
@@ -409,11 +439,13 @@ browser.runtime.onConnect.addListener(function (p) {
                             configuration: m.configuration,
                         });
                     break;
+                case "toolTriggered":
                 case "requestHelpNeeded":
-                    console.log('BG: User requested help');
-                    break;
                 case "requestHelpRejected":
-                    console.log('BG: User rejected help');
+                    console.log('BG: User triggered a tool');
+                    if (trackingWebSocket.isReady()) {
+                        trackingWebSocket.reasoner.step();
+                    }
                     break;
             }
         });
@@ -529,7 +561,7 @@ let tabUiConfigManager = {
 
 };
 
-/*
+/*cloudRequest
 
 function addPort(p) {
     for (let i = 0; i < ports.length; i++) {

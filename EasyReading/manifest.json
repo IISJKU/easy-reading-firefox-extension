@@ -22,7 +22,7 @@
     "*://www.googleapis.com/*",
     "*://accounts.google.com/*"
   ],
-  "content_security_policy": "script-src 'self' https://localhost https://easyreading-cloud.eu/ https://dev.easyreading-cloud.eu/ https://dev-easy-reading.eu-gb.mybluemix.net/ https://easy-reading.eu-gb.mybluemix.net/ https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/ https://apis.google.com/js/; object-src 'self'",
+  "content_security_policy": "script-src 'self' 'unsafe-eval' https://localhost https://easyreading-cloud.eu/ https://dev.easyreading-cloud.eu/ https://dev-easy-reading.eu-gb.mybluemix.net/ https://easy-reading.eu-gb.mybluemix.net/ https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/ https://apis.google.com/js/; object-src 'self'",
   "background": {
     "scripts": [
       "lib/jquery/jquery.js",

@@ -33,17 +33,16 @@ var trackingWebSocket = {
 
     onOpen: function (event) {
         trackingWebSocket.isConnected = true;
-        // background.onConnectedToTracking(event); TODO
+        background.onConnectedToTracking(event);
         trackingWebSocket.ping();
     },
 
     onMessage: function (message) {
-
         try {
-            // TODO fetch message from asterics and send to reasoner
-            let action = reasoner.step(message);
-            background.onMessageFromTracking({type: action});
-            console.log("tracking-ws: message received: " + message);
+            if ('data' in message && message.data) {
+                background.onMessageFromTracking(message.data);
+                console.log("tracking-ws: message received: " + message);
+            }
         } catch (e) {
             console.log("tracking-ws: error on message- " + e);
             throw e;
@@ -59,7 +58,7 @@ var trackingWebSocket = {
         let errorMsg = "Could not connect to: "+event.currentTarget.url;
         trackingWebSocket.isConnected = false;
         trackingWebSocket.webSocket = undefined;
-        // background.onDisconnectFromTracking(errorMsg); TODO
+        background.onDisconnectFromTracking(errorMsg);
         trackingWebSocket.reconnect();
     },
 
@@ -79,7 +78,6 @@ var trackingWebSocket = {
     ping:function () {
         if(this.isConnected){
             this.sendMessage(JSON.stringify({type: "ping"}));
-            console.log("tracking-ws: ping");
             setTimeout(function () {
                 trackingWebSocket.ping();
             }, 10000);
@@ -89,7 +87,9 @@ var trackingWebSocket = {
     getConfig:function () {
         return this.config;
     },
+    
+    isReady: function () {
+        return this.isConnected;
+    }
 
 };
-
-trackingWebSocket.initWebSocket();
