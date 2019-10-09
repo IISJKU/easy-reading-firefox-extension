@@ -63,8 +63,9 @@ let contentScriptController = {
                     $(document).ready(function () {
                         if (typeof easyReading !== 'undefined') {
                             console.log("starting up");
-                            easyReading.shutdown();
-                            easyReading.startup( contentScriptController.scriptManager.uiCollection);
+                            //easyReading.shutdown();
+                            //easyReading.startup( contentScriptController.scriptManager.uiCollection);
+                            easyReading.update( contentScriptController.scriptManager.uiCollection);
                         }
 
                     });
@@ -182,3 +183,4 @@ browser.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     contentScriptController.receiveMessageFromBackgroundScript(request);
 
 });
+

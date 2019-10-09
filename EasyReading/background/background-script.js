@@ -3,9 +3,11 @@
 var background = {
     errorMsg: null,
     uuid: null,
+    authMethod: null,
     connectToCloud: function (config) {
 
         cloudWebSocket.initWebSocket(config);
+        this.authMethod = config.authMethod;
     },
 
     onConnectedToCloud: function (event) {
@@ -44,7 +46,7 @@ var background = {
                 //Try silent login
                 background.uuid = receivedMessage.result;
 
-                silentLogin.login("https://" + cloudWebSocket.config.url, receivedMessage.result);
+                silentLogin.login("https://" + cloudWebSocket.config.url, receivedMessage.result,this.authMethod);
 
                 break;
             case "userLoginResult":

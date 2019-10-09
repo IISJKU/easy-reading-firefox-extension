@@ -2,9 +2,12 @@ var silentLogin = {
     httpRequest : null,
     url: null,
     uuid: null,
-    login: function (url, uuid) {
+
+    login: function (url, uuid,loginMethod="google") {
+
         this.url = url;
         this.uuid = uuid;
+        this.loginMethod = loginMethod;
         this.httpRequest = new XMLHttpRequest();
         this.httpRequest.open("POST",this.getLoginURL() );
         this.httpRequest.onreadystatechange = this.onReadyStateChange;
@@ -41,6 +44,13 @@ var silentLogin = {
 
     getLoginURL: function () {
 
-        return this.url+"/client/login?token="+this.uuid;
+        if(this.loginMethod === "google"){
+
+            return this.url+"/client/login?token="+this.uuid;
+        }else if(this.loginMethod === "fb"){
+            return this.url+"/client/login/facebook?token="+this.uuid;
+        }else if(this.loginMethod === "anonym"){
+            return this.url+"/client/login/anonym?token="+this.uuid;
+        }
     }
 };
