@@ -74,7 +74,7 @@ let contentScriptController = {
                 }
                 this.scriptManager = m.data;
                 break;
-            case "askUserNeedsHelp":
+            case 'askuser':
                 console.log("Displaying tracking dialog");
                 tracking_dialog.show();
                 break;

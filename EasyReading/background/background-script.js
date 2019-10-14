@@ -54,12 +54,14 @@ var background = {
 
         switch (receivedMessage.type) {
             case "getUUIDResult" :
-
                 //Try silent login
                 background.uuid = receivedMessage.result;
 
                 silentLogin.login("https://" + cloudWebSocket.config.url, receivedMessage.result,this.authMethod);
 
+                if (background.uuid && !this.reasoner) {
+                    this.reasoner = new EasyReadingReasoner(0.01);
+                }
                 break;
             case "userLoginResult":
                 scriptManager.reset();
@@ -128,7 +130,7 @@ var background = {
                 }
 
                 if (!this.reasoner) {
-                    this.reasoner = new EasyReadingReasoner();
+                    this.reasoner = new EasyReadingReasoner(0.01);
                 }
 
                 break;
@@ -236,7 +238,7 @@ var background = {
                 let message = JSON.parse(json_msg);
                 let action = this.reasoner.step(message);
                 switch (action) {
-                    case "askUserNeedsHelp":
+                    case EasyReadingReasoner.A.askUser:
                         browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                                 let tab = tabs[0];
                                 if (tab) {
@@ -346,6 +348,7 @@ var background = {
 
         });
 
+        this.reasoner = null;
 
         let configTabs = await background.getOpenConfigTabs();
         configTabs.forEach(async (tab) => {
@@ -441,10 +444,14 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                 case "requestHelpNeeded":
+                    if (trackingWebSocket.isReady()) {
+                        trackingWebSocket.setHumanFeedback("help");
+                    }
+                    break;
                 case "requestHelpRejected":
                     console.log('BG: User triggered a tool');
                     if (trackingWebSocket.isReady()) {
-                        trackingWebSocket.reasoner.step();
+                        trackingWebSocket.setHumanFeedback("ok");
                     }
                     break;
             }
