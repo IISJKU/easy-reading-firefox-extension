@@ -3,11 +3,13 @@ var silentLogin = {
     url: null,
     uuid: null,
 
-    login: function (url, uuid,loginMethod="google") {
+    login: function (config, uuid) {
 
-        this.url = url;
+
+        this.url = "https://" + config.url;
         this.uuid = uuid;
-        this.loginMethod = loginMethod;
+        this.config = config;
+        this.authMethod = config.authMethod;
         this.httpRequest = new XMLHttpRequest();
         this.httpRequest.open("POST",this.getLoginURL() );
         this.httpRequest.onreadystatechange = this.onReadyStateChange;
@@ -44,13 +46,13 @@ var silentLogin = {
 
     getLoginURL: function () {
 
-        if(this.loginMethod === "google"){
+        if(this.authMethod === "google"){
 
             return this.url+"/client/login?token="+this.uuid;
-        }else if(this.loginMethod === "fb"){
+        }else if(this.authMethod === "fb"){
             return this.url+"/client/login/facebook?token="+this.uuid;
-        }else if(this.loginMethod === "anonym"){
-            return this.url+"/client/login/anonym?token="+this.uuid;
+        }else if(this.authMethod === "anonym"){
+            return this.url+"/client/login/anonym?token="+this.uuid+"&lang="+this.config.lang;
         }
     }
 };
