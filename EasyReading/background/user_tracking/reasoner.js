@@ -1,16 +1,29 @@
 class EasyReadingReasoner {
 
-    active = true;
+    is_active = true;
     model = null;
     alpha = 0.01;
 
+    set active(active) {
+        this.is_active = active;
+        if (!active) {
+            this.resetStatus();
+        }
+    }
+
+    get active() {
+        return this.is_active;
+    }
+
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
-    user_s_new = false;
-    waiting_feedback = false;  // Whether reasoner is waiting for user feedback
+    reward = 0;
+    waiting_feedback = false;  // Whether reasoner is waiting for user feedback (can be implicit)
+    collect_t = "before";  // Whether status being received refers to before or after feedback obtained
 
     IDLE_TIME = 5000;  // User idle time (ms) before inferring user reward
     BUFFER_SIZE = 5;
-    s_buffer = Array(BUFFER_SIZE);  // States buffer
+    s_buffer = [];  // Buffer of states before feedback
+    s_next_buffer = [];  // Buffer of states after feedback
 
 
     constructor (step_size) {
@@ -22,7 +35,7 @@ class EasyReadingReasoner {
      * Action set
      */
     static get A() {
-        return {'nop': 'nop', 'askUser': 'askuser', 'showHelp': 'showhelp'};
+        return {'nop': 'nop', 'askUser': 'askuser', 'showHelp': 'showhelp', 'ignore': 'ignore'};
     }
 
     /**
@@ -32,7 +45,19 @@ class EasyReadingReasoner {
         return {'relaxed': 'relaxed', 'confused': 'confused', 'unsure': 'unsure'};
     }
 
+    /**
+     * Resets model current state, n.b. not model parameters!
+     */
+    resetStatus() {
+        this.waiting_feedback = false;
+        this.collect_t = "before";
+        this.reward = 0;
+        this.s_buffer = [];
+        this.s_next_buffer = [];
+    }
+
     loadModel(n_features, m_type='perceptron') {
+        this.resetStatus();
         if (m_type === 'sequential') {
             this.loadSequentialModel();
         } else {
@@ -68,43 +93,78 @@ class EasyReadingReasoner {
         const labels = Object.keys(message);  // Array keys; not sample labels!
         const features = Object.values(message);
         if (!labels || !features) {
-            return EasyReadingReasoner.A.nop;
+            return EasyReadingReasoner.A.ignore;
+        }
+        let sample = this.preProcessSample(labels, features);
+        if (!sample) {
+            return EasyReadingReasoner.A.ignore;
         }
         if (!this.w && !this.model) {
             this.w = tf.zeros([1, labels.length], 'float32');
         }
-        let action = EasyReadingReasoner.A.askUser;  // TODO change to nop
-
-        let n = this.s_buffer.push(features);
-        if (n > this.BUFFER_SIZE) {
-            this.s_buffer.shift();
-        }
-
-        if (! this.waiting_feedback) {
-            let state = this.aggregateStates();
-            if (state) {
-                // action = model.action()
-                this.waiting_feedback = true;
-                let start = performance.now();
-                let this_reasoner = this;
-                let feedback = null;
-                while (this.waiting_feedback) {
-                    setTimeout(function() {
-                        let end = performance.now();
-                        if (end - start >= IDLE_TIME) {
-                            this_reasoner.waiting_feedback = false;
-                            feedback = "ok";
-                        }
-                    }, 500);
+        let action = null;
+        // Push sample to corresponding buffer
+        if (this.collect_t === "before") {
+            let n = this.s_buffer.push(features);
+            if (n > this.BUFFER_SIZE) {
+                this.s_buffer.shift();
+            }
+            if (! this.waiting_feedback) {
+                let state = this.aggregateStates(this.s_buffer);
+                if (state) {
+                    action = this.randomAction(state);  // TODO change to sgd
+                    this.collect_t = "after";
+                    this.waiting_feedback = true;
                 }
-                // updateAgent();
+            }
+        } else {
+            let n = this.s_next_buffer.push(features);
+            if (n > this.BUFFER_SIZE) {
+                this.s_next_buffer.shift();
             }
         }
-
         return action;
     };
 
+    /**
+     * Simple model for testing purposes; returns a random action regardless of state
+     * @param state
+     * @returns {string}
+     */
+    randomAction(state) {
+        let action = EasyReadingReasoner.A.askUser;
+        return action;
+        let rand = Math.random();
+        if (rand > 0.5) {
+            if (rand < 0.75) {
+                action = EasyReadingReasoner.A.nop;
+            } else {
+                action = EasyReadingReasoner.A.showHelp;
+            }
+        }
+        return action
+    }
 
+    waitForUserReaction() {
+        let start = performance.now();
+        let this_reasoner = this;
+        this.collect_t = "after";
+
+        function timeout () {
+            setTimeout(function () {
+                if (this_reasoner.waiting_feedback) {
+                    let end = performance.now();
+                    if (end - start >= this_reasoner.IDLE_TIME) {
+                        this_reasoner.setHumanFeedback("ok");
+                    } else {
+                        timeout();
+                    }
+                }
+            }, 500);
+        }
+
+        timeout();
+    };
 
     /**
      * Update current user status according to human feedback
@@ -115,19 +175,32 @@ class EasyReadingReasoner {
         if (feedback === "help") {
             user_status = EasyReadingReasoner.user_S.confused;
         }
-        let reward = this.humanFeedbackToReward(user_status);
+        this.reward = this.humanFeedbackToReward(user_status);
+        this.user_status = user_status;
         this.waiting_feedback = false;
-        return reward;
+        this.updateModel();
     }
 
-    aggregateStates() {
+    updateModel() {
+        // TODO: update here according to this.s_buffer, this.s_next_buffer, and this.reward
+        this.collect_t = "before";
+        this.s_buffer = [];
+        this.s_next_buffer = [];
+    }
+
+    /**
+     * Aggregate buffered states into a single state by averaging over all timesteps
+     * @param buffer: array of past states; shape (timesteps x n_features)
+     * @returns {Array}: aggregated state; shape (1 x n_features)
+     */
+    aggregateStates(buffer) {
         let aggregated = [];
-        let n_s = this.s_buffer.length;
+        let n_s = buffer.length;
         if (n_s === 1) {
-            aggregated = this.s_buffer;
+            aggregated = buffer;
         } else if (n_s > 1) {
-            for (let i=0; i<this.s_buffer.length; i++) {
-                let s_i = this.s_buffer[i];
+            for (let i=0; i<buffer.length; i++) {
+                let s_i = buffer[i];
                 if (s_i.length > 0) {
                     let sum, avg = 0;
                     sum = s_i.reduce(function(a, b) { return a + b; });
@@ -137,6 +210,23 @@ class EasyReadingReasoner {
             }
         }
         return aggregated;
+    }
+
+    /**
+     * Clean useless features (e.g. timestamp) from a sample and ensure that all features are present in it
+     */
+    preProcessSample(labels, sample) {
+        let sample_clean = [];
+        let n_labels = labels.length;
+        let n_features = sample.length;
+        if (n_features && n_features === n_labels) {
+            for (let i=0; i<n_features; i++) {
+                if (labels[i] !== 'timestamp') {
+                    sample_clean.push(sample[i]);
+                }
+            }
+        }
+        return sample_clean;
     }
 
     /**

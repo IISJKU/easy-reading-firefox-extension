@@ -237,21 +237,30 @@ var background = {
             try {
                 let message = JSON.parse(json_msg);
                 let action = this.reasoner.step(message);
-                switch (action) {
-                    case EasyReadingReasoner.A.askUser:
-                        browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
-                                let tab = tabs[0];
-                                if (tab) {
-                                    let port = portManager.getPort(tab.id);
-                                    if (port) {
-                                        port.p.postMessage(message);
+                if (action) {
+                    switch (action) {
+                        case EasyReadingReasoner.A.askUser:
+                            browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
+                                    let tab = tabs[0];
+                                    if (tab) {
+                                        let port = portManager.getPort(tab.id);
+                                        if (port) {
+                                            port.p.postMessage({type: "askuser"});
+                                        }
+                                    } else {
+                                        console.log("onMessageFromTracking: No active tab found");
                                     }
-                                } else {
-                                    console.log("onMessageFromTracking: No active tab found");
                                 }
-                            }
-                        );
-                        break;
+                            );
+                            break;
+                        case EasyReadingReasoner.A.nop:
+                            this.reasoner.waitForUserReaction();
+                            break;
+                        case EasyReadingReasoner.A.showHelp:
+                            // TODO trigger preferred help
+                            this.reasoner.waitForUserReaction();
+                            break;
+                    }
                 }
             } catch (error) {
                 if (error instanceof SyntaxError) {
