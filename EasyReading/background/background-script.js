@@ -453,14 +453,14 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                 case "requestHelpNeeded":
-                    if (trackingWebSocket.isReady()) {
-                        trackingWebSocket.setHumanFeedback("help");
+                    if (trackingWebSocket.isReady() && this.reasoner.active) {
+                        this.reasoner.setHumanFeedback("help");
                     }
                     break;
                 case "requestHelpRejected":
                     console.log('BG: User triggered a tool');
-                    if (trackingWebSocket.isReady()) {
-                        trackingWebSocket.setHumanFeedback("ok");
+                    if (trackingWebSocket.isReady() && this.reasoner.active) {
+                        this.reasoner.setHumanFeedback("ok");
                     }
                     break;
             }
