@@ -19,12 +19,22 @@ var silentLogin = {
 
                 if(!response.success){
                     authFailed = true;
+                } else {
+                    if (!background.reasoner) {
+                        background.reasoner = new EasyReadingReasoner(0.01);
+                    } else {
+                        background.reasoner.active = true;
+                    }
                 }
             } catch (e) {
                 authFailed = true;
             }
 
             if(authFailed){
+
+                if (background.reasoner) {
+                    background.reasoner.active = false;
+                }
 
                 browser.runtime.openOptionsPage();
                 let optionsPage = background.getActiveOptionsPage();

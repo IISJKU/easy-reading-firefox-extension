@@ -59,9 +59,6 @@ var background = {
 
                 silentLogin.login("https://" + cloudWebSocket.config.url, receivedMessage.result,this.authMethod);
 
-                if (background.uuid && !this.reasoner) {
-                    this.reasoner = new EasyReadingReasoner(0.01);
-                }
                 break;
             case "userLoginResult":
                 scriptManager.reset();
@@ -131,6 +128,8 @@ var background = {
 
                 if (!this.reasoner) {
                     this.reasoner = new EasyReadingReasoner(0.01);
+                } else {
+                    this.reasoner.active = true;
                 }
 
                 break;
@@ -189,8 +188,6 @@ var background = {
                             }
                             message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);
                             portManager.ports[k].p.postMessage(message);
-
-
                         }
 
                     }
@@ -229,7 +226,7 @@ var background = {
 
     onDisconnectFromTracking: async function (error) {
         background.errorMsg = error;
-        this.reasoner.active = false;
+        // this.reasoner.active = false; // TODO: uncomment when not testing
     },
 
     onMessageFromTracking: async function (json_msg) {
@@ -238,35 +235,48 @@ var background = {
                 let message = JSON.parse(json_msg);
                 let action = this.reasoner.step(message);
                 if (action) {
-                    switch (action) {
-                        case EasyReadingReasoner.A.askUser:
-                            browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
-                                    let tab = tabs[0];
-                                    if (tab) {
-                                        let port = portManager.getPort(tab.id);
-                                        if (port) {
-                                            port.p.postMessage({type: "askuser"});
-                                        }
-                                    } else {
-                                        console.log("onMessageFromTracking: No active tab found");
-                                    }
-                                }
-                            );
-                            break;
-                        case EasyReadingReasoner.A.nop:
-                            this.reasoner.waitForUserReaction();
-                            break;
-                        case EasyReadingReasoner.A.showHelp:
-                            // TODO trigger preferred help
-                            this.reasoner.waitForUserReaction();
-                            break;
-                    }
+                    this.handleReasonerAction(action);
                 }
             } catch (error) {
                 if (error instanceof SyntaxError) {
                     console.log("onMessageFromTracking: received message is not valid JSON!");
                 }
             }
+        }
+    },
+
+    handleReasonerAction(action) {
+        let this_reasoner = this.reasoner;
+        switch (action) {
+            case EasyReadingReasoner.A.askUser:
+                browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
+                        let reset_status = false;
+                        let tab = tabs[0];
+                        if (tab) {
+                            let port = portManager.getPort(tab.id);
+                            if (port) {
+                                port.p.postMessage({type: "askuser"});
+                                this_reasoner.waitForUserReaction();
+                            } else {
+                                reset_status = true;
+                            }
+                        } else {
+                            reset_status = true;
+                            console.log("onMessageFromTracking: No active tab found");
+                        }
+                        if (reset_status) {
+                            this.reasoner.resetStatus();  // User can't be helped on system tabs
+                        }
+                    }
+                );
+                break;
+            case EasyReadingReasoner.A.nop:
+                this_reasoner.waitForUserReaction();
+                break;
+            case EasyReadingReasoner.A.showHelp:
+                // TODO trigger preferred help
+                this_reasoner.waitForUserReaction();
+                break;
         }
     },
 
@@ -375,6 +385,43 @@ var background = {
     }
 };
 
+// Mock tracking session
+let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000}\n";
+
+let allLines = log_example.split(/\r\n|\n/);
+let n_lines = allLines.length;
+let i = 0;
+
+function timeout () {
+    setTimeout(function () {
+        let message = JSON.parse(allLines[i]);
+        if (message && background.reasoner && background.reasoner.active) {
+            let action = background.reasoner.step(message);
+            background.handleReasonerAction(action);
+            if (i < n_lines - 2) {
+                i += 1;
+            } else {
+                i = 0;
+            }
+        }
+        if (i < n_lines - 2) {
+            i += 1;
+        } else {
+            i = 0;
+        }
+        timeout();
+    },  5000);
+}
+timeout();
 
 browser.runtime.onConnect.addListener(function (p) {
     //if (scriptManager.profileReceived) {
@@ -453,14 +500,14 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                 case "requestHelpNeeded":
-                    if (trackingWebSocket.isReady() && this.reasoner.active) {
-                        this.reasoner.setHumanFeedback("help");
+                    if (trackingWebSocket.isReady() && background.reasoner.active) {
+                        background.reasoner.setHumanFeedback("help");
                     }
                     break;
                 case "requestHelpRejected":
                     console.log('BG: User triggered a tool');
-                    if (trackingWebSocket.isReady() && this.reasoner.active) {
-                        this.reasoner.setHumanFeedback("ok");
+                    if (trackingWebSocket.isReady() && background.reasoner.active) {
+                        background.reasoner.setHumanFeedback("ok");
                     }
                     break;
             }
