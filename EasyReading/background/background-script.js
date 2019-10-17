@@ -3,13 +3,14 @@
 var background = {
     errorMsg: null,
     uuid: null,
-    authMethod: null,
+   // authMethod: null,
+    config: null,
     reasoner: null,
 
     connectToCloud: function (config) {
 
         cloudWebSocket.initWebSocket(config);
-        this.authMethod = config.authMethod;
+        this.config = config;
     },
 
     onConnectedToCloud: function (event) {
@@ -57,7 +58,7 @@ var background = {
                 //Try silent login
                 background.uuid = receivedMessage.result;
 
-                silentLogin.login("https://" + cloudWebSocket.config.url, receivedMessage.result,this.authMethod);
+                silentLogin.login(this.config, receivedMessage.result);
 
                 break;
             case "userLoginResult":
@@ -147,8 +148,7 @@ var background = {
 
                 if (scriptManager.debugMode) {
 
-                    for (let i = 0; i < portManager.ports.length; i++) {
-                        if (portManager.ports[i].startUpComplete) {
+                    for (let i = 0; i < ports.length; i++) {
 
                             message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[i].p.sender.tab.id);
                             portManager.ports[i].p.postMessage(message);
@@ -177,13 +177,13 @@ var background = {
                                     console.log(error);
                                 }
 
-                            }
-                            for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
-                                try {
-                                    await browser.tabs.insertCSS(tabId, {code: (atob(scriptManager.updatedContentCSS[i].css))});
-                                } catch (error) {
-                                    console.log(error);
-                                }
+                    }
+                    for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
+                        try {
+                            await browser.tabs.insertCSS({code: (atob(scriptManager.updatedContentCSS[i].css))});
+                        } catch (error) {
+                            console.log(error);
+                        }
 
                             }
                             message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);

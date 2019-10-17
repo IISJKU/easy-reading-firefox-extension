@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Easy Reader Config</title>
+
     <script src="../../lib/jquery/jquery.js"></script>
-    <script src="config.js"></script>
-    <link rel="stylesheet" type="text/css" href="config.css"/>
+    <script src="js/foundation.min.js"></script>
+    <script src="js/aria.toggle.js"></script>
+    <script src="js/tab.focus.js"></script>
+    <script src="js/config.js"></script>
+
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+    <link href="css/foundation.css" rel="stylesheet"/>
+    <link href="css/config.css" rel="stylesheet"/>
 </head>
 <body>
-
 
 
 <div id="infoContainer">
@@ -17,30 +23,44 @@
     <hr>
 </div>
 
+<div class="row wrapper">
+    <div class="column medium-12 align-center" style="text-align: center">
+        <img id="er-logo" src="img/logo.png" alt="Easy Reading logo">
+        <h1><span class="fa fa-lock"></span>Easy Reading Login</h1>
+        <p>Login or Register with:</p>
+        <ul class="no-bullet">
+            <li>
+                <div id="gSignInWrapper">
+                    <button id="googleSignInButton" class="customGPlusSignIn">
+                        <span class="icon"></span>
+                        <span class="buttonText">Google</span>
+                    </button>
+                </div>
+            </li>
+            <li>
 
+                <div id="fbSignInButton" class="login-button" role="button" tabindex="0">
+                    <div class="login-facebook-icon">f</div>
+                    <div class="login-facebook-text">Continue with Facebook</div>
+                </div>
+            </li>
+            <li>
 
-<h1 id="heading"><img src="img/logo.png" alt="" id="heading-logo">EasyReader</h1>
-<h2>Sign in  with</h2>
-<ul>
-    <li>
-        <div id="gSignInWrapper">
-            <button id="googleSignInButton" class="customGPlusSignIn">
-                <span class="icon"></span>
-                <span class="buttonText">Google</span>
-            </button>
+                <button id="anonymLogin">
+                    login anonym
+                </button>
+            </li>
+        </ul>
+
+        <hr>
+        <br>
+        <br>
+        <br>
+        <div id="cloudServerSelect">
+
         </div>
-    </li>
-</ul>
-<hr>
-<br>
-<br>
-<br>
-<div id="cloudServerSelect">
-
+    </div>
 </div>
-
-
-
 
 </body>
 </html>
