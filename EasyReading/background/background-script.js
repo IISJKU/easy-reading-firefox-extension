@@ -6,8 +6,6 @@ var background = {
     authMethod: null,
     reasoner: null,
 
-    last_port: null,
-
     connectToCloud: function (config) {
 
         cloudWebSocket.initWebSocket(config);
@@ -260,14 +258,7 @@ var background = {
                             if (port) {
                                 port.p.postMessage({type: "askuser"});
                                 this_reasoner.waitForUserReaction();
-                                this_reasoner.last_port = port;
                                 reset_status = false;
-                            } else {
-                                if (this_reasoner.last_port) {
-                                    this_reasoner.last_port.p.postMessage({type: "askuser"});
-                                    this_reasoner.waitForUserReaction();
-                                    reset_status = false;
-                                }
                             }
                         } else {
                             console.log("onMessageFromTracking: No active tab found");
