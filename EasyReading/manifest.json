@@ -44,7 +44,8 @@
       "js": [
         "lib/jquery/jquery.js",
         "lib/noty/noty.js",
-        "content/content-script.js"
+        "content/content-script.js",
+        "content/tracking-dialog.js"
       ],
       "css": [
         "lib/noty/noty.css",

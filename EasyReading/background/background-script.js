@@ -6,6 +6,8 @@ var background = {
     authMethod: null,
     reasoner: null,
 
+    last_port: null,
+
     connectToCloud: function (config) {
 
         cloudWebSocket.initWebSocket(config);
@@ -249,6 +251,7 @@ var background = {
         let this_reasoner = this.reasoner;
         switch (action) {
             case EasyReadingReasoner.A.askUser:
+                let reset_status = true;
                 browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                         let reset_status = false;
                         let tab = tabs[0];
@@ -257,16 +260,24 @@ var background = {
                             if (port) {
                                 port.p.postMessage({type: "askuser"});
                                 this_reasoner.waitForUserReaction();
+                                this_reasoner.last_port = port;
+                                reset_status = false;
                             } else {
-                                reset_status = true;
+                                if (this_reasoner.last_port) {
+                                    this_reasoner.last_port.p.postMessage({type: "askuser"});
+                                    this_reasoner.waitForUserReaction();
+                                    reset_status = false;
+                                }
                             }
                         } else {
-                            reset_status = true;
                             console.log("onMessageFromTracking: No active tab found");
                         }
                         if (reset_status) {
                             this.reasoner.resetStatus();  // User can't be helped on system tabs
                         }
+                    },
+                    (error) => {
+                        this.reasoner.resetStatus();
                     }
                 );
                 break;

@@ -17,7 +17,7 @@ class EasyReadingReasoner {
 
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
     reward = 0;
-    waiting_feedback = false;  // Whether reasoner is waiting for user feedback (can be implicit)
+    waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
 
     IDLE_TIME = 5000;  // User idle time (ms) before inferring user reward

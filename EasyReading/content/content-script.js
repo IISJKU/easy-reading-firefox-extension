@@ -76,7 +76,7 @@ let contentScriptController = {
                 break;
             case 'askuser':
                 console.log("Displaying tracking dialog");
-                tracking_dialog.show();
+                tracking_dialog.showDialog();
                 break;
         }
     },
@@ -141,11 +141,10 @@ let contentScriptController = {
     
     loadScripts:function (injection) {
 
-    }
-    
-
+    },
 
 };
+
 
 let util ={
     isDefined: function (obj) {
@@ -164,40 +163,6 @@ let util ={
         return "https://" + url + '/' + str;
     }
 };
-
-let tracking_dialog = new Noty({
-    id: 'er-user-tracking-feedback-dialog',
-    type: 'success',
-    text: 'Do you need help?',
-    layout: 'topRight',
-    theme: 'relax',
-    timeout: 3500,
-    progressBar: true,
-    buttons: [
-        Noty.button('Yes',
-            'er-tracking-button',
-            function () {
-                tracking_dialog.helpNeeded = true;
-                tracking_dialog.close();
-            }
-        ),
-        Noty.button('No',
-            'er-tracking-button',
-            function () {
-                tracking_dialog.helpNeeded = false;
-                tracking_dialog.close();
-            }
-        )
-    ]
-}).on('onClose', function() {
-    if (tracking_dialog.helpNeeded) {
-        console.log('User asked for help');
-        contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpNeeded"});
-    } else {
-        console.log('User rejected help');
-        contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
-    }
-});
 
 /*$(document).ready(function() {
     tracking_dialog.show();
