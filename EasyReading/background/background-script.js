@@ -154,8 +154,6 @@ var background = {
                             portManager.ports[i].p.postMessage(message);
                         }
 
-                    }
-
                 } else {
 
                     for (let k = 0; k < portManager.ports.length; k++) {
