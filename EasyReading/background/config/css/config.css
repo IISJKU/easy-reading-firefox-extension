@@ -87,3 +87,27 @@ span.buttonText {
     padding-left: 58px;
     border: 1px solid #3b5998;
 }
+#toogleSetting>img{
+
+    max-width: 40px;
+    max-height:40px;
+}
+
+#toogleSetting{
+    padding: 4px;
+    border: 2px solid black;
+}
+
+#cloudServerSelect{
+    display: none;
+}
+
+#toogleSetting.selected{
+    background-color: white;
+}
+
+legend {
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+}

@@ -56,5 +56,6 @@
     },
     "default_title": "Easy Reading"
 
-  }
+  },
+  "default_locale": "en"
 }

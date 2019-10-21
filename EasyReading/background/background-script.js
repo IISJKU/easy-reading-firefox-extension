@@ -59,7 +59,7 @@ var background = {
                 let configTabIds = [];
                 if (configTabs.length !== 0) {
                     configTabs.forEach((tab) => {
-                        browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
+               //         browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
                         configTabIds.push(tab.id);
                     });
                 }
