@@ -249,7 +249,6 @@ var background = {
             case EasyReadingReasoner.A.askUser:
                 let reset_status = true;
                 browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
-                        let reset_status = false;
                         let tab = tabs[0];
                         if (tab) {
                             let port = portManager.getPort(tab.id);
@@ -505,7 +504,6 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "requestHelpRejected":
-                    console.log('BG: User triggered a tool');
                     if (trackingWebSocket.isReady() && background.reasoner.active) {
                         background.reasoner.setHumanFeedback("ok");
                     }

@@ -6,7 +6,10 @@ class EasyReadingReasoner {
 
     set active(active) {
         this.is_active = active;
-        if (!active) {
+        if (active) {
+            console.log("Reasoner enabled");
+        } else {
+            console.log("Reasoner disabled");
             this.resetStatus();
         }
     }
@@ -20,7 +23,7 @@ class EasyReadingReasoner {
     waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
 
-    IDLE_TIME = 5000;  // User idle time (ms) before inferring user reward
+    IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     BUFFER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
@@ -54,6 +57,7 @@ class EasyReadingReasoner {
         this.reward = 0;
         this.s_buffer = [];
         this.s_next_buffer = [];
+        console.log("Reasoner status reset. Collecting new user state");
     }
 
     loadModel(n_features, m_type='perceptron') {
@@ -113,7 +117,9 @@ class EasyReadingReasoner {
                 let state = this.aggregateStates(this.s_buffer);
                 if (state) {
                     action = this.randomAction(state);  // TODO change to sgd
+                    console.log("Reasoner action: " + action);
                     this.collect_t = "after";
+                    console.log("Collecting next state");
                     this.waiting_feedback = true;
                 }
             }
@@ -133,7 +139,7 @@ class EasyReadingReasoner {
      */
     randomAction(state) {
         let action = EasyReadingReasoner.A.askUser;
-        return action;
+        // return action;
         let rand = Math.random();
         if (rand > 0.5) {
             if (rand < 0.75) {
@@ -149,12 +155,14 @@ class EasyReadingReasoner {
         let start = performance.now();
         let this_reasoner = this;
         this.collect_t = "after";
+        console.log("Collecting next state (waiting for user's reaction)");
 
         function timeout () {
             setTimeout(function () {
                 if (this_reasoner.waiting_feedback) {
                     let end = performance.now();
                     if (end - start >= this_reasoner.IDLE_TIME) {
+                        console.log("Reasoner: user idle. Assuming everything OK.");
                         this_reasoner.setHumanFeedback("ok");
                     } else {
                         timeout();
@@ -171,13 +179,14 @@ class EasyReadingReasoner {
      * @param feedback: "help" or "ok" (help not needed)
      */
     setHumanFeedback(feedback) {
+        this.waiting_feedback = false;
         let user_status = EasyReadingReasoner.user_S.relaxed;
         if (feedback === "help") {
             user_status = EasyReadingReasoner.user_S.confused;
         }
         this.reward = this.humanFeedbackToReward(user_status);
+        console.log("Reasoner: setting reward to " + this.reward);
         this.user_status = user_status;
-        this.waiting_feedback = false;
         this.updateModel();
     }
 
@@ -186,6 +195,7 @@ class EasyReadingReasoner {
         this.collect_t = "before";
         this.s_buffer = [];
         this.s_next_buffer = [];
+        console.log("Reasoner model updated. Collecting new user state");
     }
 
     /**
@@ -199,6 +209,7 @@ class EasyReadingReasoner {
         if (n_s === 1) {
             aggregated = buffer;
         } else if (n_s > 1) {
+            console.log("Reasoner: aggregating " + n_s + " user states.");
             for (let i=0; i<buffer.length; i++) {
                 let s_i = buffer[i];
                 if (s_i.length > 0) {
@@ -254,5 +265,37 @@ class EasyReadingReasoner {
             }
         }
         return reward;
+    }
+
+
+    /**
+     * Return a random sample for testing purposes
+     * @param fixation: 'high' or 'low'; Random with 80% low chance if empty
+     * @returns: Sample object
+     */
+    getRandomSample(fixation) {
+        if (!fixation) {
+            fixation = Math.random() < 0.8 ? 'high' : 'low';
+        }
+        let ts = new Date().toLocaleString();
+        let base_fix = 1000.0;
+        let blink_rate = 0.0;
+        if (fixation === 'low') {
+            base_fix = 200.0;
+            blink_rate = 1.0;
+        }
+        let fix_tensor_base = tf.scalar(base_fix);
+        let fix_t = fix_tensor_base.add(tf.randomNormal([1], 0, 200, 'float32'));
+        let blink_t = tf.randomNormal([1], 50, 15, 'float32');
+        let fix_val = fix_t.dataSync()[0];
+        if (fix_val < 0) {
+            fix_val = 0;
+        }
+        return {
+            'timestamp': ts,
+            'fixation_ms': fix_val,
+            'blink_ms': blink_t.dataSync()[0],
+            'blink_rate': blink_rate
+        };
     }
 }
