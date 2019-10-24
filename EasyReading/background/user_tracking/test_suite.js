@@ -9,14 +9,13 @@ if (start_test) {
     let gamma = 0.1;
 
     // TEST BEGIN
-    let reasoner = EasyReadingReasoner(alpha, 'q_learning', 3, gamma);
+    let reasoner = new EasyReadingReasoner(alpha, 'q_learning', 3, gamma);
     reasoner.testing = true;
     let n_relaxed = Math.ceil(n_iterations * relax_f);
 
     let n_correct = 0;
     let n_dialogs = 0;
     for (let i=0; i<n_iterations; i++) {
-        let samples = [];
         let sample = null;
         let action = null;
         let fix = null;

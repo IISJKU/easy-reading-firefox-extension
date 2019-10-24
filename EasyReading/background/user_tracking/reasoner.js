@@ -34,6 +34,7 @@ class EasyReadingReasoner {
     t_current = 1;  // Current timestep
     waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
+    feature_names = [];
 
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     BUFFER_SIZE = 5;
@@ -74,6 +75,7 @@ class EasyReadingReasoner {
         this.last_action = null;
         this.s_buffer = [];
         this.s_next_buffer = [];
+        this.feature_names = [];
         console.log("Reasoner status reset. Collecting new user state");
     }
 
@@ -114,6 +116,7 @@ class EasyReadingReasoner {
         if (!labels || !features) {
             return EasyReadingReasoner.A.ignore;
         }
+        this.feature_names = labels;  // Precondition: all messages carry same labels
         if (!this.w && !this.model && !this.q_func) {
             this.w = tf.zeros([1, labels.length], 'float32');
         }
@@ -124,7 +127,7 @@ class EasyReadingReasoner {
                 this.s_buffer.shift();
             }
             if (! this.waiting_feedback) {
-                let state = preProcessSample(this.aggregateStates(this.s_buffer));
+                let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
                 if (state) {
                     action = this.predict(state);
                     console.log("Reasoner action: " + action);
@@ -233,7 +236,12 @@ class EasyReadingReasoner {
         this.reward = this.humanFeedbackToReward(user_status);
         console.log("Reasoner: setting reward to " + this.reward);
         this.user_status = user_status;
-        this.s_next = tf.tensor1d(preProcessSample(this.aggregateStates(this.s_next_buffer)));
+        this.s_next = tf.tensor1d(
+            preProcessSample(
+                this.feature_names,
+                this.aggregateStates(this.s_next_buffer)
+            )
+        );
         this.updateModel();
     }
 
@@ -269,16 +277,33 @@ class EasyReadingReasoner {
         let aggregated = [];
         let n_s = buffer.length;
         if (n_s === 1) {
-            aggregated = buffer;
+            aggregated = buffer[0];
         } else if (n_s > 1) {
-            console.log("Reasoner: aggregating " + n_s + " user states.");
+            let sample_length = buffer[0].length;
+            console.log('Reasoner: aggregating ' + n_s + ' user states.');
+            let combined = [];
+            let i_skipped = new Set();
             for (let i=0; i<buffer.length; i++) {
                 let s_i = buffer[i];
                 if (s_i.length > 0) {
-                    let sum, avg = 0;
-                    sum = s_i.reduce(function(a, b) { return a + b; });
-                    avg = sum / s_i.length;
-                    aggregated.push(avg);
+                    let row = [];
+                    for (let j=0; j<sample_length; j++) {
+                        if (s_i[j]==+s_i[j]) {  // Numerical value
+                            row.push(s_i[j]);
+                        } else {
+                            i_skipped.add(j);
+                        }
+                    }
+                    combined.push(row);
+                }
+            }
+            let agg_num = combined[0].map((col, i) => combined.map(row => row[i]).reduce((acc, c) => acc + c, 0) /
+                combined.length);
+            for (let k=0; k<sample_length; k++) {
+                if (i_skipped.has(k)) {
+                    aggregated.push(buffer[buffer.length-1][k]);
+                } else {
+                    aggregated.push(agg_num.shift());
                 }
             }
         }
