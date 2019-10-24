@@ -128,7 +128,7 @@ var background = {
                 }
 
                 if (!this.reasoner) {
-                    this.reasoner = new EasyReadingReasoner(0.01);
+                    this.reasoner = new EasyReadingReasoner(0.01, 'q_learning');
                 } else {
                     this.reasoner.active = true;
                 }

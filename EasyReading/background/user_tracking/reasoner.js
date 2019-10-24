@@ -31,7 +31,7 @@ class EasyReadingReasoner {
     s_curr = null;  // Current state (tensor)
     s_next = null;  // Next state (tensor)
     last_action = null;  // Last action taken
-    t_current = 0;  // Current timestep
+    t_current = 1;  // Current timestep
     waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
 
@@ -43,10 +43,10 @@ class EasyReadingReasoner {
     q_func = null;  // Action value function for Q-learning: (n_states x n_features) tensor
 
 
-    constructor (step_size=0.01, model_type='perceptron', n_features=3, n_states=0, alpha=0.1) {
+    constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1) {
         this.alpha = step_size;
-        this.alpha = alpha;
-        this.loadModel(n_features, model_type, n_states);
+        this.gamma = gamma;
+        this.loadModel(n_features, model_type);
     }
 
     /**
@@ -70,14 +70,14 @@ class EasyReadingReasoner {
         this.waiting_feedback = false;
         this.collect_t = "before";
         this.reward = 0;
-        this.t_current = 0;
+        this.t_current = 1;
         this.last_action = null;
         this.s_buffer = [];
         this.s_next_buffer = [];
         console.log("Reasoner status reset. Collecting new user state");
     }
 
-    loadModel(n_features, m_type='perceptron', n_states=0) {
+    loadModel(n_features, m_type='perceptron') {
         this.resetStatus();
         if (m_type === 'sequential') {
             this.loadSequentialModel(n_features);
@@ -114,11 +114,7 @@ class EasyReadingReasoner {
         if (!labels || !features) {
             return EasyReadingReasoner.A.ignore;
         }
-        let sample = preProcessSample(labels, features);
-        if (!sample) {
-            return EasyReadingReasoner.A.ignore;
-        }
-        if (!this.w && !this.model) {
+        if (!this.w && !this.model && !this.q_func) {
             this.w = tf.zeros([1, labels.length], 'float32');
         }
         // Push sample to corresponding buffer
@@ -128,7 +124,7 @@ class EasyReadingReasoner {
                 this.s_buffer.shift();
             }
             if (! this.waiting_feedback) {
-                let state = this.aggregateStates(this.s_buffer);
+                let state = preProcessSample(this.aggregateStates(this.s_buffer));
                 if (state) {
                     action = this.predict(state);
                     console.log("Reasoner action: " + action);
@@ -237,7 +233,7 @@ class EasyReadingReasoner {
         this.reward = this.humanFeedbackToReward(user_status);
         console.log("Reasoner: setting reward to " + this.reward);
         this.user_status = user_status;
-        this.s_next = tf.tensor1d(this.aggregateStates(this.s_next_buffer));
+        this.s_next = tf.tensor1d(preProcessSample(this.aggregateStates(this.s_next_buffer)));
         this.updateModel();
     }
 
@@ -251,7 +247,17 @@ class EasyReadingReasoner {
         this.collect_t = "before";
         this.s_buffer = [];
         this.s_next_buffer = [];
+        if (this.t_current >= this.episode_length) {
+            this.episodeEnd();
+        }
         console.log("Reasoner model updated. Collecting new user state");
+    }
+
+    /**
+     * Callback after an episode has ended
+     */
+    episodeEnd() {
+        console.log('Episode ended');
     }
 
     /**

@@ -1,5 +1,5 @@
 /**
- * Pre-process a given sample so it fits the expected format
+ * Pre-process a given sample so it fits the expected state format
  */
 function preProcessSample(labels, sample) {
     let sample_clean = [];
@@ -8,7 +8,7 @@ function preProcessSample(labels, sample) {
     if (n_features && n_features === n_labels) {
         for (let i=0; i<n_features; i++) {
             let feature_name = labels[i];
-            if (feature_name !== 'timestamp') {
+            if (feature_name !== 'timestamp' && feature_name !== 'label') {
                 let value = sample[i];
                 let clean_value = null;
                 if (feature_name === 'fixation_ms') {
@@ -94,9 +94,11 @@ function getRandomSample(fixation) {
     let ts = new Date().toLocaleString();
     let base_fix = 1000.0;
     let blink_rate = 0.0;
+    let label = 'help';
     if (fixation === 'low') {
         base_fix = 200.0;
         blink_rate = 1.0;
+        label = 'ok';
     }
     let fix_tensor_base = tf.scalar(base_fix);
     let fix_t = fix_tensor_base.add(tf.randomNormal([1], 0, 200, 'float32'));
@@ -109,7 +111,8 @@ function getRandomSample(fixation) {
         'timestamp': ts,
         'fixation_ms': fix_val,
         'blink_ms': blink_t.dataSync()[0],
-        'blink_rate': blink_rate
+        'blink_rate': blink_rate,
+        'label': label
     };
 }
 
