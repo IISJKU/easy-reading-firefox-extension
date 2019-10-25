@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Easy Reader Config</title>
+    <title>Easy Reading</title>
 
     <script src="../../lib/jquery/jquery.js"></script>
     <script src="js/foundation.min.js"></script>
@@ -26,14 +26,14 @@
 <div class="row wrapper">
     <div class="column medium-12 align-center" style="text-align: center">
         <img id="er-logo" src="img/logo.png" alt="Easy Reading logo">
-        <h1><span class="fa fa-lock"></span>Easy Reading Login</h1>
-        <p>Login or Register with:</p>
+        <h1><span class="fa fa-lock"></span><span id="loginMessage">Easy Reading Login</span></h1>
+        <div id="loginDescription">Login or Register with:</div>
         <ul class="no-bullet">
             <li>
                 <div id="gSignInWrapper">
                     <button id="googleSignInButton" class="customGPlusSignIn">
                         <span class="icon"></span>
-                        <span class="buttonText">Google</span>
+                        <span class="buttonText" id="loginGoogle">Google</span>
                     </button>
                 </div>
             </li>
@@ -41,25 +41,24 @@
 
                 <div id="fbSignInButton" class="login-button" role="button" tabindex="0">
                     <div class="login-facebook-icon">f</div>
-                    <div class="login-facebook-text">Continue with Facebook</div>
+                    <div class="login-facebook-text" id="loginFacebook">Continue with Facebook</div>
                 </div>
             </li>
             <li>
 
                 <button id="anonymLogin">
-                    login anonym
+                    Anonymous login
                 </button>
             </li>
         </ul>
 
         <hr>
-        <br>
-        <br>
-        <br>
+        <button id="toogleSetting" ><img src="img/settings.png" alt="Settings"></button>
         <div id="cloudServerSelect">
 
         </div>
     </div>
+
 </div>
 
 </body>

@@ -70,7 +70,7 @@ var background = {
                 let configTabIds = [];
                 if (configTabs.length !== 0) {
                     configTabs.forEach((tab) => {
-                        browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
+               //         browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
                         configTabIds.push(tab.id);
                     });
                 }
@@ -90,7 +90,8 @@ var background = {
 
                     tabs.forEach(async (tab) => {
 
-                        if (!easyReading.isIgnoredUrl(tab.url) && tab.url !== "about:debugging" && !configTabIds.includes(tab.id)) {
+                        if (!easyReading.isIgnoredUrl(tab.url) && !tab.url.startsWith("about:")) {
+
                             if (tab.status === "complete") {
 
                                 if (scriptManager.debugMode) {
@@ -355,7 +356,7 @@ var background = {
 
         tabs.forEach(async (tab) => {
 
-            if (tab.url !== "about:debugging") {
+            if (!tab.url.startsWith("about:") && !easyReading.isIgnoredUrl(tab.url)) {
 
                 if (tab.status === "complete") {
 

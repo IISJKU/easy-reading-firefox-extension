@@ -1,0 +1,31 @@
+{
+  "extensionName": {
+    "message": "Easy Reader",
+    "description": "Name of the extension."
+  },
+  "extensionDescription": {
+    "message": "Hilft Menschen schwierige Webseiten besser zu verstehen.",
+    "description": "Description of the extension."
+  },
+
+
+  "loginMessage": {
+    "message": "Easy Reader Login"
+  },
+
+  "loginDescription": {
+    "message": "Anmelden oder registrieren mit:"
+  },
+
+  "loginGoogle": {
+    "message": "Google"
+  },
+
+  "loginFacebook": {
+    "message": "Weiter mit Facebook"
+  },
+
+  "loginAnonym": {
+    "message": "Anonym anmelden"
+  }
+}

@@ -1,5 +1,6 @@
 let contentScriptController = {
     debugModeListenerStarted:false,
+    profileReceived: false,
     init: function () {
 
         //listens to messages from the background script
@@ -32,7 +33,15 @@ let contentScriptController = {
 
                 break;
             case "getUserProfile":
+                if(this.profileReceived){
+                    console.log("profile already received");
+                    return;
+                }
+                this.profileReceived = true;
+
                 this.scriptManager = m.data;
+
+
 
                 if(this.scriptManager.debugMode){
                     let injection = {scripts: this.scriptManager.remoteScripts, styleSheets: this.scriptManager.remoteCSS};
