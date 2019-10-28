@@ -116,6 +116,14 @@ function getRandomSample(fixation) {
     };
 }
 
+function isTensor(what) {
+    let is_t = false;
+    if (what) {
+        is_t = typeof(what) === 'object' && 'shape' in what;
+    }
+    return is_t;
+}
+
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);

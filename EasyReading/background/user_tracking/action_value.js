@@ -11,8 +11,9 @@ class ActionValueFunction {
     }
 
     retrieve(state, action) {
-        if (state in this.q && action in this.q[state]) {
-            return this.q[state][action];
+        let state_data = this.getStateRepresentation(state);
+        if (state_data in this.q && action in this.q[state_data]) {
+            return this.q[state_data][action];
         } else {
             return 0.0;
         }
@@ -30,22 +31,26 @@ class ActionValueFunction {
      * @returns string; Action yielding the best expected future return starting from S (or random action)
      */
     epsGreedyAction(state, eps) {
-        if (state in this.q) {
-            if (eps > 0.01 && Math.random() <= eps) {
-                return this.getRandomAction();
-            }
-            let tied_actions = [];
-            let v = Number.NEGATIVE_INFINITY;
-            for (let a in this.actions) {
-                let g = this.retrieve(state, a);
-                if (g > v) {
-                    v = g;
-                    tied_actions = [a];
-                } else if (g === v) {
-                    tied_actions.push(a);
+        if (state) {
+            let state_data = this.getStateRepresentation(state);
+            if (state_data in this.q) {
+                if (eps > 0.01 && Math.random() <= eps) {
+                    return this.getRandomAction();
                 }
+                let tied_actions = [];
+                let v = Number.NEGATIVE_INFINITY;
+                for (let a in this.actions) {
+                    let action = this.actions[a];
+                    let g = this.retrieve(state_data, action);
+                    if (g > v) {
+                        v = g;
+                        tied_actions = [action];
+                    } else if (g === v) {
+                        tied_actions.push(action);
+                    }
+                }
+                return tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
             }
-            return tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
         }
         return this.getRandomAction();
     }
@@ -62,19 +67,22 @@ class ActionValueFunction {
      * @param update: True to update Q with new value, False to override old value with new one.
      */
     insert(state, action, value, update=false) {
-        if (state in this.q) {
-            if (action in this.q[state]) {
-                if (update) {
-                    this.q[state][action] += value;
+        if (state) {
+            let state_data = this.getStateRepresentation(state);
+            if (state_data in this.q) {
+                if (action in this.q[state_data]) {
+                    if (update) {
+                        this.q[state_data][action] += value;
+                    } else {
+                        this.q[state_data][action] = value;
+                    }
                 } else {
-                    this.q[state][action] = value;
+                    this.q[state_data][action] = value;
                 }
             } else {
-                this.q[state][action] = value;
+                this.q[state_data] = {};
+                this.q[state_data][action] = value;
             }
-        } else {
-            this.q[state] = {};
-            this.q[state][action] = value;
         }
     }
 
@@ -92,6 +100,16 @@ class ActionValueFunction {
 
     getRandomActionIndex() {
         return Math.floor(Math.random() * this.n_actions);
+    }
+
+    getStateRepresentation(state) {
+        let state_data = null;
+        if (isTensor(state)) {
+            state_data = state.dataSync();
+        } else {
+            state_data = state;
+        }
+        return state_data;
     }
 
 }

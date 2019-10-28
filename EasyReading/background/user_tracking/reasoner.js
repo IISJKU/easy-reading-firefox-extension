@@ -249,16 +249,16 @@ class EasyReadingReasoner {
         if (this.q_func) {
             let q_target = this.reward + this.gamma * this.q_func.retrieveGreedy(this.s_next);
             let new_q_value = this.alpha * (q_target - this.q_func.retrieve(this.s_curr, this.last_action));
-            this.q_func.update(this.s_curr, this.s_next, new_q_value);
+            this.q_func.update(this.s_curr, this.last_action, new_q_value);
             this.last_action = null;
         }
-        this.collect_t = "before";
+        this.collect_t = 'before';
         this.s_buffer = [];
         this.s_next_buffer = [];
         if (this.t_current >= this.episode_length) {
             this.episodeEnd();
         }
-        console.log("Reasoner model updated. Collecting new user state");
+        console.log('Reasoner model updated. Collecting new user state');
     }
 
     /**

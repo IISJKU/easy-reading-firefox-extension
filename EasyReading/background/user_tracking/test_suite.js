@@ -2,7 +2,7 @@ let start_test = false;
 
 if (start_test) {
     // TEST PARAMETERS
-    let n_iterations = 100;
+    let n_iterations = 1000;
     let batch_size = 5;
     let relax_f = 0.8;  // Ratio of relaxed vs stressed samples
     let alpha = 0.01;
@@ -15,7 +15,7 @@ if (start_test) {
 
     let n_correct = 0;
     let n_dialogs = 0;
-    for (let i=0; i<n_iterations; i++) {
+    for (let i = 0; i < n_iterations; i++) {
         let sample = null;
         let action = null;
         let fix = null;
@@ -28,21 +28,31 @@ if (start_test) {
         action = reasoner.step(sample);
         reasoner.waitForUserReaction();
         // Mock feedback waiting loop
-        for (let k=0; k<batch_size; k++) {
+        for (let k = 0; k < batch_size; k++) {
             let sample_after = getRandomSample(fix);
             reasoner.step(sample_after);
         }
         if (action !== null) {
             reasoner.setHumanFeedback(sample.label);
         }
-        if (action === sample.label) {
+        if (good_action(action, sample.label)) {
             n_correct++;
         }
         if (action === EasyReadingReasoner.A.askUser) {
             n_dialogs++;
         }
-        reasoner.setHumanFeedback(sample.label);
     }
-    console.log('Accuracy: ' + n_correct/n_iterations);
+
+    console.log('Accuracy: ' + n_correct / n_iterations);
     console.log('User asked: ' + n_dialogs + ' times.');
+}
+
+function good_action(action, label) {
+    let good = false;
+    if (label === 'help' && action === 'showhelp') {
+        good = true;
+    } else if (label === 'ok' && (action === 'nop' || action === 'ignore')) {
+        good = true;
+    }
+    return good;
 }
