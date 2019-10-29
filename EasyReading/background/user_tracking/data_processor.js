@@ -84,21 +84,21 @@ function processRate(rate) {
 
 /**
  * Return a random sample for testing purposes
- * @param fixation: 'high' or 'low'; Random with 80% low chance if empty
+ * @param status: 'ok' or 'confused'; Random with 80% 'ok' chance if empty
  * @returns: Sample object
  */
-function getRandomSample(fixation) {
-    if (!fixation) {
-        fixation = Math.random() < 0.8 ? 'high' : 'low';
+function getRandomSample(status) {
+    if (!status) {
+        status = Math.random() < 0.8 ? 'ok' : 'confused';
     }
     let ts = new Date().toLocaleString();
-    let base_fix = 1000.0;
-    let blink_rate = 0.0;
-    let label = 'help';
-    if (fixation === 'low') {
-        base_fix = 200.0;
-        blink_rate = 1.0;
-        label = 'ok';
+    let base_fix = 200.0;
+    let blink_rate = 1.0;
+    let label = 'ok';
+    if (status === 'confused') {
+        base_fix = 1000.0;
+        blink_rate = 0.0;
+        label = 'help';
     }
     let fix_tensor_base = tf.scalar(base_fix);
     let fix_t = fix_tensor_base.add(tf.randomNormal([1], 0, 200, 'float32'));
