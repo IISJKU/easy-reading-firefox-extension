@@ -319,9 +319,9 @@ class EasyReadingReasoner {
         let reward = 0.0;
         if (feedback === EasyReadingReasoner.user_S.confused) {
             if (this.user_status === EasyReadingReasoner.user_S.confused) {
-                reward = 100.0;
+                reward = 10;
             } else if (this.user_status === EasyReadingReasoner.user_S.relaxed) {
-                reward = -100.0;
+                reward = -200.0;
             } else {
                 reward = -10.0;
             }
@@ -329,7 +329,7 @@ class EasyReadingReasoner {
             if (this.user_status === EasyReadingReasoner.user_S.confused) {
                 reward = -20.0;
             } else if (this.user_status === EasyReadingReasoner.user_S.relaxed) {
-                reward = 0.01;
+                reward = 1;
             } else {
                 reward = -10.0;
             }
