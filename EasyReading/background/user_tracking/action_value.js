@@ -25,12 +25,33 @@ class ActionValueFunction {
     }
 
     /**
+     * Given S, return A <- argmax_a(Q(S,a))
+     * @param state; State S for which to return best action
+     * @returns string; Action yielding the best expected future return starting from S
+     */
+    greedyAction(state) {
+        return this.epsGreedyAction(state, 0.0)
+    }
+
+    /**
      * Given S, return A <- argmax_a(Q(S,a)), with eps probability of instead choosing an action randomly
      * @param state; State for which to return best action
      * @param eps; Probability of exploring a random action instead of acting greedily
      * @returns string; Action yielding the best expected future return starting from S (or random action)
      */
     epsGreedyAction(state, eps) {
+        return this.epsGreedyCombinedAction(state, eps, null);
+    }
+
+    /**
+     * Given S, return A <- argmax_a(Q_A(S,a) + Q_B(S,a)), with eps probability of instead choosing an action randomly
+     * (double Q-learning)
+     * @param state; State for which to return best action
+     * @param eps; Probability of exploring a random action instead of acting greedily
+     * @param q_b; ActionValueFunction instance for second action-value function (Q_B)
+     * @returns string; Action yielding the best expected future return starting from S (or random action)
+     */
+    epsGreedyCombinedAction(state, eps, q_b) {
         if (state) {
             let state_data = this.getStateRepresentation(state);
             if (state_data in this.q) {
@@ -42,10 +63,13 @@ class ActionValueFunction {
                 for (let a in this.actions) {
                     let action = this.actions[a];
                     let g = this.retrieve(state_data, action);
+                    if (q_b) {
+                        g += q_b.retrieve(state_data, action);
+                    }
                     if (g > v) {
                         v = g;
                         tied_actions = [action];
-                    } else if (g === v) {
+                    } else if (Math.abs(g - v) < 0.0001) {
                         tied_actions.push(action);
                     }
                 }
@@ -53,10 +77,6 @@ class ActionValueFunction {
             }
         }
         return this.getRandomAction();
-    }
-
-    greedyAction(state) {
-        return this.epsGreedyAction(state, 0.0)
     }
 
     /**

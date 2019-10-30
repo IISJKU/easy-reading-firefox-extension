@@ -1,5 +1,6 @@
 class EasyReadingReasoner {
 
+    model_type = 'none';
     is_active = true;
     testing = false;
     model = null;
@@ -41,10 +42,11 @@ class EasyReadingReasoner {
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
 
-    q_func = null;  // Action value function for Q-learning: (n_states x n_features) tensor
-
+    q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
+    q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
 
     constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1) {
+        this.model_type = model_type;
         this.alpha = step_size;
         this.gamma = gamma;
         this.loadModel(n_features, model_type);
@@ -83,10 +85,13 @@ class EasyReadingReasoner {
         this.resetStatus();
         if (m_type === 'sequential') {
             this.loadSequentialModel(n_features);
-        } else if (m_type === 'q_learning') {
+        } else if (m_type === 'q_learning' || m_type === 'double_q_l') {
             this.model = null;
             this.w = null;
-            this.q_func = new ActionValueFunction(Object.values(EasyReadingReasoner.A));
+            this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A));
+            if (m_type === 'double_q_l') {
+                this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A));
+            }
             console.log('Q function initialized');
         } else {
             this.model = null;
@@ -117,7 +122,7 @@ class EasyReadingReasoner {
             return EasyReadingReasoner.A.ignore;
         }
         this.feature_names = labels;  // Precondition: all messages carry same labels
-        if (!this.w && !this.model && !this.q_func) {
+        if (!this.w && !this.model && !this.q_func_a) {
             this.w = tf.zeros([1, labels.length], 'float32');
         }
         // Push sample to corresponding buffer
@@ -136,7 +141,7 @@ class EasyReadingReasoner {
                     this.waiting_feedback = true;
                 }
             }
-        } else {
+        } else {  // Collecting next state; take no action
             let n = this.s_next_buffer.push(features);
             if (n > this.BUFFER_SIZE) {
                 this.s_next_buffer.shift();
@@ -155,9 +160,11 @@ class EasyReadingReasoner {
         this.t_current += 1;
         if (state) {
             this.s_curr = tf.tensor1d(state);
-            if (this.q_func) {
-                action = this.q_func.epsGreedyAction(state, this.eps);
-            }  else if (this.model) {
+            if (this.q_func_a && this.q_func_b) {
+                action = this.q_func_a.epsGreedyCombinedAction(state, this.eps, this.q_func_b);
+            } else if (this.q_func_a) {
+                action = this.q_func_a.epsGreedyAction(state, this.eps);
+            } else if (this.model) {
                 action = this.model.predict(this.s_curr);
             }
         }
@@ -246,19 +253,47 @@ class EasyReadingReasoner {
     }
 
     updateModel() {
-        if (this.q_func) {
-            let q_target = this.reward + this.gamma * this.q_func.retrieveGreedy(this.s_next);
-            let new_q_value = this.alpha * (q_target - this.q_func.retrieve(this.s_curr, this.last_action));
-            this.q_func.update(this.s_curr, this.last_action, new_q_value);
-            this.last_action = null;
+        if (this.q_func_a) {
+            if (this.q_func_b) {
+                this.updateDoubleQModel();
+            } else {
+                this.updateQModel();
+            }
         }
+        this.last_action = null;
         this.collect_t = 'before';
         this.s_buffer = [];
         this.s_next_buffer = [];
         if (this.t_current >= this.episode_length) {
             this.episodeEnd();
         }
-        console.log('Reasoner model updated. Collecting new user state');
+        //console.log('Reasoner model updated. Collecting new user state');
+    }
+
+    updateQModel() {
+        let q_target = this.reward + this.gamma * this.q_func_a.retrieveGreedy(this.s_next);
+        let new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, this.last_action));
+        this.q_func_a.update(this.s_curr, this.last_action, new_q_value);
+    }
+
+    updateDoubleQModel() {
+        let to_update = 'a';
+        if (Math.random() < 0.5) {
+            to_update = 'b';
+        }
+        let q_target = 0.0;
+        let new_q_value = 0.0;
+        if (to_update === 'a') {
+            q_target = this.reward +
+                this.gamma * this.q_func_b.retrieve(this.s_next, this.q_func_a.greedyAction(this.s_next));
+            new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, this.last_action));
+            this.q_func_a.update(this.s_curr, this.last_action, new_q_value);
+        } else {
+            q_target = this.reward +
+                this.gamma * this.q_func_a.retrieve(this.s_next, this.q_func_b.greedyAction(this.s_next));
+            new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, this.last_action));
+            this.q_func_b.update(this.s_curr, this.last_action, new_q_value);
+        }
     }
 
     /**
