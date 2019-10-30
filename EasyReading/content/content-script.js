@@ -86,6 +86,7 @@ let contentScriptController = {
                 break;
             case "userLogout":{
 
+                this.profileReceived = false;
 
                 if(this.scriptManager.debugMode){
                     let event = new CustomEvent("userLogout");
