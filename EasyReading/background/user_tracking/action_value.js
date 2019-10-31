@@ -2,11 +2,17 @@ class ActionValueFunction {
     q = {};
     actions = [];
     n_actions = 0;
+    count_actions = {};  // Counter of actions taken
+    ucb_c = 0.0;  // UCB degree of exploration
 
-    constructor(actions) {
+    constructor(actions, ucb_c=0.0) {
         if (actions && actions.length > 0) {
             this.actions = actions;
             this.n_actions = actions.length;
+            for (let i=0; i<this.n_actions; i++) {
+                this.count_actions[actions[i]] = 0;
+            }
+            this.ucb_c = ucb_c;
         }
     }
 
@@ -19,45 +25,22 @@ class ActionValueFunction {
         }
     }
 
-    retrieveGreedy(state) {
-        let action = this.greedyAction(state);
+    retrieveGreedy(state, t) {
+        let action = this.greedyAction(state, t);
         return this.retrieve(state, action);
     }
 
     /**
-     * Given S, return A <- argmax_a(Q(S,a))
-     * @param state; State S for which to return best action
+     * Greedy double Q-learning: Given S, return A <- argmax_a(Q(S,a) + Q_B(S,a))
+     * @param state; State for which to return best action
+     * @param q_b; ActionValueFunction instance for second action-value function
+     * @param t int: Agent's current time step
      * @returns string; Action yielding the best expected future return starting from S
      */
-    greedyAction(state) {
-        return this.epsGreedyAction(state, 0.0)
-    }
-
-    /**
-     * Given S, return A <- argmax_a(Q(S,a)), with eps probability of instead choosing an action randomly
-     * @param state; State for which to return best action
-     * @param eps; Probability of exploring a random action instead of acting greedily
-     * @returns string; Action yielding the best expected future return starting from S (or random action)
-     */
-    epsGreedyAction(state, eps) {
-        return this.epsGreedyCombinedAction(state, eps, null);
-    }
-
-    /**
-     * Given S, return A <- argmax_a(Q_A(S,a) + Q_B(S,a)), with eps probability of instead choosing an action randomly
-     * (double Q-learning)
-     * @param state; State for which to return best action
-     * @param eps; Probability of exploring a random action instead of acting greedily
-     * @param q_b; ActionValueFunction instance for second action-value function (Q_B)
-     * @returns string; Action yielding the best expected future return starting from S (or random action)
-     */
-    epsGreedyCombinedAction(state, eps, q_b) {
+    greedyCombinedAction(state, q_b, t) {
         if (state) {
             let state_data = this.getStateRepresentation(state);
             if (state_data in this.q) {
-                if (eps > 0.01 && Math.random() <= eps) {
-                    return this.getRandomAction();
-                }
                 let tied_actions = [];
                 let v = Number.NEGATIVE_INFINITY;
                 for (let a in this.actions) {
@@ -66,17 +49,59 @@ class ActionValueFunction {
                     if (q_b) {
                         g += q_b.retrieve(state_data, action);
                     }
+                    if (this.ucb_c > 0) {
+                        g += this.upper_confidence_bound(action, t);
+                    }
                     if (g > v) {
                         v = g;
                         tied_actions = [action];
-                    } else if (Math.abs(g - v) < 0.0001) {
+                    } else if (g === Number.POSITIVE_INFINITY || Math.abs(g - v) < 0.0001) {
                         tied_actions.push(action);
                     }
                 }
-                return tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
+                let chosen_a = tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
+                this.count_actions[chosen_a]++;
+                return chosen_a;
             }
         }
         return this.getRandomAction();
+    }
+
+    /**
+     * Greedy Q-learning: Given S, return A <- argmax_a(Q(S,a))
+     * @param state; State for which to return best action
+     * @param t int: Agent's current time step
+     * @returns string; Action yielding the best expected future return starting from S
+     */
+    greedyAction(state, t) {
+        return this.greedyCombinedAction(state, null, t);
+    }
+
+    /**
+     * Given S, return A <- argmax_a(Q(S,a)), with eps probability of instead choosing an action randomly
+     * @param state; State for which to return best action
+     * @param eps; Probability of exploring a random action instead of acting greedily
+     * @param t int: Agent's current time step
+     * @returns string; Action yielding the best expected future return starting from S (or random action)
+     */
+    epsGreedyAction(state, eps, t) {
+        return this.epsGreedyCombinedAction(state, eps, null, t);
+    }
+
+    /**
+     * Given S, return A <- argmax_a(Q(S,a) + Q_B(S,a)), with eps probability of instead choosing an action randomly
+     * (double Q-learning)
+     * @param state; State for which to return best action
+     * @param eps; Probability of exploring a random action instead of acting greedily
+     * @param q_b; ActionValueFunction instance for second action-value function
+     * @param t int: Agent's current time step
+     * @returns string; Action yielding the best expected future return starting from S (or random action)
+     */
+    epsGreedyCombinedAction(state, eps, q_b, t) {
+        if (eps > 0.01 && Math.random() <= eps) {
+            return this.getRandomAction();
+        }
+        return this.greedyCombinedAction(state, q_b, t);
     }
 
     /**
@@ -110,12 +135,26 @@ class ActionValueFunction {
         this.insert(state, action, value, true);
     }
 
-    static argMax(array) {
-        return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
+    /**
+     * Returns the current UCB value for the given action
+     * @param action: action to consider
+     * @param t int: current time step
+     */
+    upper_confidence_bound(action, t) {
+        if (action && t > 0 && action in this.count_actions) {
+            if (this.count_actions[action] > 0) {
+                return this.ucb_c * Math.sqrt(Math.log(t)/this.count_actions[action]);
+            } else {
+                return Number.POSITIVE_INFINITY;
+            }
+        }
+        return 0.0;
     }
 
     getRandomAction() {
-        return this.actions[this.getRandomActionIndex()];
+        let a =  this.actions[this.getRandomActionIndex()];
+        this.count_actions[a]++;
+        return a;
     }
 
     getRandomActionIndex() {
@@ -130,6 +169,10 @@ class ActionValueFunction {
             state_data = state;
         }
         return state_data;
+    }
+
+    static argMax(array) {
+        return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
     }
 
 }

@@ -8,6 +8,7 @@ class EasyReadingReasoner {
     gamma = 0.1; // Discount factor
     eps = 0.1;  // Epsilon for e-greedy policies
     episode_length = 20;  // Timesteps before ending episode
+    ucb = 0; // Upper-Confidence-Bound Action Selection constant
 
     set active(active) {
         if (this.testing) {
@@ -45,10 +46,11 @@ class EasyReadingReasoner {
     q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
     q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
 
-    constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1) {
+    constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1, ucb=0.0) {
         this.model_type = model_type;
         this.alpha = step_size;
         this.gamma = gamma;
+        this.ucb = ucb;
         this.loadModel(n_features, model_type);
     }
 
@@ -85,12 +87,12 @@ class EasyReadingReasoner {
         this.resetStatus();
         if (m_type === 'sequential') {
             this.loadSequentialModel(n_features);
-        } else if (m_type === 'q_learning' || m_type === 'double_q_l') {
+        } else if (m_type.startsWith('q_learning') || m_type.startsWith('double_q_l')) {
             this.model = null;
             this.w = null;
-            this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A));
-            if (m_type === 'double_q_l') {
-                this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A));
+            this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A), this.ucb);
+            if (m_type.startsWith('double_q_l')) {
+                this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A), this.ucb);
             }
             console.log('Q function initialized');
         } else {
@@ -126,7 +128,7 @@ class EasyReadingReasoner {
             this.w = tf.zeros([1, labels.length], 'float32');
         }
         // Push sample to corresponding buffer
-        if (this.collect_t === "before") {
+        if (this.collect_t === 'before') {
             let n = this.s_buffer.push(features);
             if (n > this.BUFFER_SIZE) {
                 this.s_buffer.shift();
@@ -135,9 +137,9 @@ class EasyReadingReasoner {
                 let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
                 if (state) {
                     action = this.predict(state);
-                    console.log("Reasoner action: " + action);
-                    this.collect_t = "after";
-                    console.log("Collecting next state");
+                    //console.log('Reasoner action: ' + action);
+                    this.collect_t = 'after';
+                    //console.log('Collecting next state');
                     this.waiting_feedback = true;
                 }
             }
@@ -157,13 +159,13 @@ class EasyReadingReasoner {
      */
     predict(state) {
         let action = null;
-        this.t_current += 1;
+        this.t_current++;
         if (state) {
             this.s_curr = tf.tensor1d(state);
             if (this.q_func_a && this.q_func_b) {
-                action = this.q_func_a.epsGreedyCombinedAction(state, this.eps, this.q_func_b);
+                action = this.q_func_a.epsGreedyCombinedAction(state, this.eps, this.q_func_b, this.t_current);
             } else if (this.q_func_a) {
-                action = this.q_func_a.epsGreedyAction(state, this.eps);
+                action = this.q_func_a.epsGreedyAction(state, this.eps, this.t_current);
             } else if (this.model) {
                 action = this.model.predict(this.s_curr);
             }
@@ -271,7 +273,7 @@ class EasyReadingReasoner {
     }
 
     updateQModel() {
-        let q_target = this.reward + this.gamma * this.q_func_a.retrieveGreedy(this.s_next);
+        let q_target = this.reward + this.gamma * this.q_func_a.retrieveGreedy(this.s_next, this.t_current);
         let new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, this.last_action));
         this.q_func_a.update(this.s_curr, this.last_action, new_q_value);
     }
@@ -285,12 +287,14 @@ class EasyReadingReasoner {
         let new_q_value = 0.0;
         if (to_update === 'a') {
             q_target = this.reward +
-                this.gamma * this.q_func_b.retrieve(this.s_next, this.q_func_a.greedyAction(this.s_next));
+                this.gamma * this.q_func_b.retrieve(this.s_next,
+                    this.q_func_a.greedyAction(this.s_next, this.t_current));
             new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, this.last_action));
             this.q_func_a.update(this.s_curr, this.last_action, new_q_value);
         } else {
             q_target = this.reward +
-                this.gamma * this.q_func_a.retrieve(this.s_next, this.q_func_b.greedyAction(this.s_next));
+                this.gamma * this.q_func_a.retrieve(this.s_next,
+                    this.q_func_b.greedyAction(this.s_next, this.t_current));
             new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, this.last_action));
             this.q_func_b.update(this.s_curr, this.last_action, new_q_value);
         }
