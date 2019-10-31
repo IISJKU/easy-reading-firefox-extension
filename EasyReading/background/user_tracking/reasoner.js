@@ -7,6 +7,7 @@ class EasyReadingReasoner {
     alpha = 0.01; // Step size
     gamma = 0.1; // Discount factor
     eps = 0.1;  // Epsilon for e-greedy policies
+    eps_decay = 1;  // Epsilon decay factor (applied on each timestep)
     episode_length = 20;  // Timesteps before ending episode
     ucb = 0; // Upper-Confidence-Bound Action Selection constant
 
@@ -46,11 +47,13 @@ class EasyReadingReasoner {
     q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
     q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
 
-    constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1, ucb=0.0) {
-        this.model_type = model_type;
+    constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
         this.alpha = step_size;
         this.gamma = gamma;
+        this.eps = eps;
+        this.eps_decay = eps_decay;
         this.ucb = ucb;
+        this.model_type = model_type;
         this.loadModel(n_features, model_type);
     }
 
@@ -186,6 +189,7 @@ class EasyReadingReasoner {
                 break;
         }
         this.last_action = action;
+        this.eps *= this.eps_decay;
         return action;
     }
 
