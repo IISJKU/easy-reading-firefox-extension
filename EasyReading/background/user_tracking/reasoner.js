@@ -123,7 +123,7 @@ class EasyReadingReasoner {
         let action = null;
         const labels = Object.keys(message);  // Array keys; not sample labels!
         const features = Object.values(message);
-        if (!labels || !features) {
+        if (!this.is_active || !labels || !features) {
             return EasyReadingReasoner.A.ignore;
         }
         this.feature_names = labels;  // Precondition: all messages carry same labels

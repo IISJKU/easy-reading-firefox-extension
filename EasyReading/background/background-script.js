@@ -129,7 +129,7 @@ var background = {
                 }
 
                 if (!this.reasoner) {
-                    this.reasoner = new EasyReadingReasoner(0.01, 'q_learning');
+                    this.reasoner = new EasyReadingReasoner(0.01, 'q_learning', 3, 0.1, 0.2, 0.9);
                 } else {
                     this.reasoner.active = true;
                 }

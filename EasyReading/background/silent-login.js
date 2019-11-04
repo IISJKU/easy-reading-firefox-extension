@@ -26,7 +26,7 @@ var silentLogin = {
                     authFailed = true;
                 } else {
                     if (!background.reasoner) {
-                        background.reasoner = new EasyReadingReasoner(0.01);
+                        background.reasoner = new EasyReadingReasoner(0.01, 'q_learning', 3, 0.1, 0.2, 0.9);
                     } else {
                         background.reasoner.active = true;
                     }
