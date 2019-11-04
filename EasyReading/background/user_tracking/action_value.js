@@ -2,15 +2,20 @@ class ActionValueFunction {
     q = {};
     actions = [];
     n_actions = 0;
+    preferred_action_i = -1; // Index of preferred action to take when in doubt, negative for none
     count_actions = {};  // Counter of actions taken
     ucb_c = 0.0;  // UCB degree of exploration
 
-    constructor(actions, ucb_c=0.0) {
+    constructor(actions, preferred_a = '', ucb_c=0.0) {
         if (actions && actions.length > 0) {
             this.actions = actions;
             this.n_actions = actions.length;
             for (let i=0; i<this.n_actions; i++) {
-                this.count_actions[actions[i]] = 0;
+                let a = actions[i];
+                this.count_actions[a] = 0;
+                if (a === preferred_a) {
+                    this.preferred_action_i = i;
+                }
             }
             this.ucb_c = ucb_c;
         }
@@ -59,7 +64,13 @@ class ActionValueFunction {
                         tied_actions.push(action);
                     }
                 }
-                let chosen_a = tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
+                let chosen_a = null;
+                if (this.preferred_action_i > 0) {
+                    chosen_a = this.actions[this.preferred_action_i];
+                }
+                if (chosen_a === null || tied_actions.indexOf(chosen_a) === -1) {
+                    chosen_a = tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
+                }
                 this.count_actions[chosen_a]++;
                 return chosen_a;
             }
@@ -152,7 +163,12 @@ class ActionValueFunction {
     }
 
     getRandomAction() {
-        let a =  this.actions[this.getRandomActionIndex()];
+        let a = null;
+        if (this.preferred_action_i > -1) {
+            a = this.actions[this.preferred_action_i];
+        } else {
+            a =  this.actions[this.getRandomActionIndex()];
+        }
         this.count_actions[a]++;
         return a;
     }
