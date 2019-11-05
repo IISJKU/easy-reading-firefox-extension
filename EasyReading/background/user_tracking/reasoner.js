@@ -54,6 +54,7 @@ class EasyReadingReasoner {
         this.eps_decay = eps_decay;
         this.ucb = ucb;
         this.model_type = model_type;
+        this.t_current = 1;
         this.loadModel(n_features, model_type);
     }
 
@@ -78,7 +79,6 @@ class EasyReadingReasoner {
         this.waiting_feedback = false;
         this.collect_t = "before";
         this.reward = 0;
-        this.t_current = 1;
         this.last_action = null;
         this.s_buffer = [];
         this.s_next_buffer = [];

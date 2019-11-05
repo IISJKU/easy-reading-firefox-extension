@@ -382,7 +382,14 @@ var background = {
         if (configTabs.length === 0 && activeOptionPages.length === 0) {
             browser.runtime.openOptionsPage();
         }
+    },
+
+    sendFeedbackToReasoner(feedback) {
+        if (trackingWebSocket.isReady() && this.reasoner.active) {
+            this.reasoner.setHumanFeedback(feedback);
+        }
     }
+
 };
 
 // Mock tracking session
@@ -498,16 +505,20 @@ browser.runtime.onConnect.addListener(function (p) {
                             configuration: m.configuration,
                         });
                     break;
-                case "toolTriggered":
                 case "requestHelpNeeded":
-                    if (trackingWebSocket.isReady() && background.reasoner.active) {
-                        background.reasoner.setHumanFeedback("help");
+                    background.sendFeedbackToReasoner("help");
+                    if (cloudWebSocket.isConnected) {
+                        cloudWebSocket.sendMessage(JSON.stringify({
+                            type: "triggerHelp",
+                            // TODO: add eye gaze position
+                        }));
                     }
                     break;
+                case "toolTriggered":
+                    background.sendFeedbackToReasoner("help");
+                    break;
                 case "requestHelpRejected":
-                    if (trackingWebSocket.isReady() && background.reasoner.active) {
-                        background.reasoner.setHumanFeedback("ok");
-                    }
+                    background.sendFeedbackToReasoner("ok");
                     break;
             }
         });
