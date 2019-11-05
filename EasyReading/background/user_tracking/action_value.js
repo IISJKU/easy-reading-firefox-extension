@@ -6,15 +6,18 @@ class ActionValueFunction {
     count_actions = {};  // Counter of actions taken
     ucb_c = 0.0;  // UCB degree of exploration
 
-    constructor(actions, preferred_a = '', ucb_c=0.0) {
+    constructor(actions, preferred_a = '', ignore_a='', ucb_c=0.0) {
         if (actions && actions.length > 0) {
-            this.actions = actions;
+            this.actions = [];
             this.n_actions = actions.length;
             for (let i=0; i<this.n_actions; i++) {
                 let a = actions[i];
                 this.count_actions[a] = 0;
                 if (a === preferred_a) {
                     this.preferred_action_i = i;
+                }
+                if (a !== ignore_a) {
+                    this.actions.push(a);
                 }
             }
             this.ucb_c = ucb_c;

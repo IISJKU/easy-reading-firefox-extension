@@ -2,7 +2,7 @@ class EasyReadingReasoner {
 
     model_type = 'none';
     is_active = true;
-    testing = false;
+    testing = true;
     model = null;
     alpha = 0.01; // Step size
     gamma = 0.1; // Discount factor
@@ -94,11 +94,13 @@ class EasyReadingReasoner {
             this.model = null;
             this.w = null;
             this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                EasyReadingReasoner.A.askUser,
+                EasyReadingReasoner.A.askUser,  // Preferred action in ties
+                EasyReadingReasoner.A.ignore,  // Never return this action, used for faulty messages
                 this.ucb);
             if (m_type.startsWith('double_q_l')) {
                 this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
                     EasyReadingReasoner.A.askUser,
+                    EasyReadingReasoner.A.ignore,
                     this.ucb);
             }
             console.log('Q function initialized');
@@ -144,9 +146,7 @@ class EasyReadingReasoner {
                 let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
                 if (state) {
                     action = this.predict(state);
-                    //console.log('Reasoner action: ' + action);
                     this.collect_t = 'after';
-                    //console.log('Collecting next state');
                     this.waiting_feedback = true;
                 }
             }
@@ -183,7 +183,6 @@ class EasyReadingReasoner {
         // Update current guess of user's mood
         switch (action) {
             case EasyReadingReasoner.A.nop:
-                this.user_status = EasyReadingReasoner.user_S.relaxed;
                 break;
             case EasyReadingReasoner.A.showHelp:
                 this.user_status = EasyReadingReasoner.user_S.confused;
@@ -228,9 +227,10 @@ class EasyReadingReasoner {
                 if (this_reasoner.waiting_feedback) {
                     let end = performance.now();
                     if (end - start >= this_reasoner.IDLE_TIME) {
-                        console.log("Reasoner: user idle. Assuming everything OK.");
-                        this_reasoner.setHumanFeedback("ok");
+                        console.log("Reasoner: user idle. Assuming prediction was correct or user OK.");
+                        this_reasoner.setFeedbackAutomatically();
                     } else {
+                        // console.log('Still waiting');
                         timeout();
                     }
                 }
@@ -239,6 +239,18 @@ class EasyReadingReasoner {
 
         timeout();
     };
+
+    setFeedbackAutomatically() {
+        switch (this.last_action) {
+            case EasyReadingReasoner.A.askUser:  // User remained idle during dialog --> assume OK
+            case EasyReadingReasoner.A.nop:
+                this.setHumanFeedback("ok");
+                break;
+            case EasyReadingReasoner.A.showHelp:
+                this.setHumanFeedback("help");
+                break;
+        } 
+    }
 
     /**
      * Update current user status according to human feedback
@@ -382,6 +394,17 @@ class EasyReadingReasoner {
             }
         }
         return reward;
+    }
+
+    isIgnoredUrl(url) {
+        let ignore = false;
+        let systemURL = easyReading.cloudEndpoints[easyReading.config.cloudEndpointIndex].url;
+        if (url && systemURL) {
+            if (url.toLowerCase().includes(systemURL)) {
+                ignore = true;
+            }
+        }
+        return ignore;
     }
 
 }

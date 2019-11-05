@@ -230,17 +230,39 @@ var background = {
 
     onMessageFromTracking: async function (json_msg) {
         if (json_msg && this.reasoner && this.reasoner.active) {
-            try {
-                let message = JSON.parse(json_msg);
-                let action = this.reasoner.step(message);
-                if (action) {
-                    this.handleReasonerAction(action);
+            let this_reasoner = this.reasoner;
+            let bg = this;
+            let system_tab = true;
+            // Ignore incoming tracking message when user visits system pages
+            browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
+                    let tab = tabs[0];
+                    if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
+                        let port = portManager.getPort(tab.id);
+                        if (port) {
+                            try {
+                                let message = JSON.parse(json_msg);
+                                let action = this_reasoner.step(message);
+                                if (action) {
+                                    bg.handleReasonerAction(action);
+                                }
+                                system_tab = false;
+                            } catch (error) {
+                                if (error instanceof SyntaxError) {
+                                    console.log("onMessageFromTracking: received message is not valid JSON!");
+                                }
+                            }
+                        }
+                    } else {
+                        console.log("onMessageFromTracking: No active tab found");
+                    }
+                    if (system_tab) {
+                        this_reasoner.resetStatus();  // User can't be helped on system tabs
+                    }
+                },
+                (error) => {
+                    this_reasoner.resetStatus();
                 }
-            } catch (error) {
-                if (error instanceof SyntaxError) {
-                    console.log("onMessageFromTracking: received message is not valid JSON!");
-                }
-            }
+            );
         }
     },
 
@@ -251,9 +273,10 @@ var background = {
                 let reset_status = true;
                 browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                         let tab = tabs[0];
-                        if (tab) {
+                        if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
                             let port = portManager.getPort(tab.id);
                             if (port) {
+                                console.log('Action taken: ask user');
                                 port.p.postMessage({type: "askuser"});
                                 this_reasoner.waitForUserReaction();
                                 reset_status = false;
@@ -262,19 +285,21 @@ var background = {
                             console.log("onMessageFromTracking: No active tab found");
                         }
                         if (reset_status) {
-                            this.reasoner.resetStatus();  // User can't be helped on system tabs
+                            this_reasoner.resetStatus();  // User can't be helped on system tabs
                         }
                     },
                     (error) => {
-                        this.reasoner.resetStatus();
+                        this_reasoner.resetStatus();
                     }
                 );
                 break;
             case EasyReadingReasoner.A.nop:
+                console.log('Action taken: nop');
                 this_reasoner.waitForUserReaction();
                 break;
             case EasyReadingReasoner.A.showHelp:
                 // TODO trigger preferred help
+                console.log('Action taken: show help');
                 this_reasoner.waitForUserReaction();
                 break;
         }
