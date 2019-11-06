@@ -97,7 +97,13 @@ let contentScriptController = {
                 break;
             case 'askuser':
                 console.log("Displaying tracking dialog");
-                tracking_dialog.showDialog();
+                let elem = $(document.elementFromPoint(m.posX, m.posY));
+                // TODO convert elem to proper type
+                tracking_dialog.showDialog(m.posX, m.posY);
+                break;
+            case 'triggerhelp':
+                console.log("Displaying confirm help dialog");
+                confirm_dialog.showDialog();
                 break;
         }
     },

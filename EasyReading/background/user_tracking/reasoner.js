@@ -1,5 +1,6 @@
 class EasyReadingReasoner {
 
+    // Model hyperparameters
     model_type = 'none';
     is_active = true;
     testing = true;
@@ -24,11 +25,11 @@ class EasyReadingReasoner {
             }
         }
     }
-
     get active() {
         return this.is_active;
     }
 
+    // Internal parameters
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
     reward = 0;  // Reward obtained in current timestep
     s_curr = null;  // Current state (tensor)
@@ -39,11 +40,14 @@ class EasyReadingReasoner {
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
     feature_names = [];
 
+    // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     BUFFER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
+    gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
 
+    // Sub-models
     q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
     q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
 
@@ -83,6 +87,7 @@ class EasyReadingReasoner {
         this.s_buffer = [];
         this.s_next_buffer = [];
         this.feature_names = [];
+        this.gaze_info = [];
         console.log("Reasoner status reset. Collecting new user state");
     }
 
@@ -145,6 +150,7 @@ class EasyReadingReasoner {
             if (! this.waiting_feedback) {
                 let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
                 if (state) {
+                    this.updateGazeInfo(labels);  // Save gaze position of current state
                     action = this.predict(state);
                     this.collect_t = 'after';
                     this.waiting_feedback = true;
@@ -318,6 +324,10 @@ class EasyReadingReasoner {
             new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, this.last_action));
             this.q_func_b.update(this.s_curr, this.last_action, new_q_value);
         }
+    }
+
+    updateGazeInfo(labels) {
+        this.gaze_info = get_gaze(labels, this.s_buffer);
     }
 
     /**

@@ -268,16 +268,37 @@ var background = {
 
     handleReasonerAction(action) {
         let this_reasoner = this.reasoner;
+        let pos_x = -1;
+        let pos_y = -1;
+        if (this.reasoner.gaze_info.length === 2) {
+            pos_x = this.reasoner.gaze_info[0];
+            pos_y = this.reasoner.gaze_info[1];
+        }
         switch (action) {
             case EasyReadingReasoner.A.askUser:
+            case EasyReadingReasoner.A.showHelp:
                 let reset_status = true;
                 browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                         let tab = tabs[0];
                         if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
                             let port = portManager.getPort(tab.id);
                             if (port) {
-                                console.log('Action taken: ask user');
-                                port.p.postMessage({type: "askuser"});
+                                if (action === EasyReadingReasoner.A.askUser) {
+                                    console.log('Action taken: ask user');
+                                    port.p.postMessage(
+                                        {   type: "askuser",
+                                            posX: pos_x,
+                                            posY: pos_y,
+                                        });
+                                } else {
+                                    // TODO trigger preferred help
+                                    console.log('Action taken: show help');
+                                    port.p.postMessage(
+                                        {   type: "triggerhelp",
+                                            posX: pos_x,
+                                            posY: pos_y,
+                                        });
+                                }
                                 this_reasoner.waitForUserReaction();
                                 reset_status = false;
                             }
@@ -295,11 +316,6 @@ var background = {
                 break;
             case EasyReadingReasoner.A.nop:
                 console.log('Action taken: nop');
-                this_reasoner.waitForUserReaction();
-                break;
-            case EasyReadingReasoner.A.showHelp:
-                // TODO trigger preferred help
-                console.log('Action taken: show help');
                 this_reasoner.waitForUserReaction();
                 break;
         }
@@ -418,16 +434,16 @@ var background = {
 };
 
 // Mock tracking session
-let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000}\n";
+let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":401,\"gaze_y\":283}\n";
 
 let allLines = log_example.split(/\r\n|\n/);
 let n_lines = allLines.length;
@@ -535,15 +551,21 @@ browser.runtime.onConnect.addListener(function (p) {
                     if (cloudWebSocket.isConnected) {
                         cloudWebSocket.sendMessage(JSON.stringify({
                             type: "triggerHelp",
-                            // TODO: add eye gaze position
+                            gaze_x: m.posX,
+                            gaze_y: m.posY
                         }));
                     }
                     break;
                 case "toolTriggered":
+                case "confirmHelp":
                     background.sendFeedbackToReasoner("help");
                     break;
                 case "requestHelpRejected":
                     background.sendFeedbackToReasoner("ok");
+                    break;
+                case "undoHelp":
+                    background.sendFeedbackToReasoner("ok");
+                    // TODO: undo help
                     break;
             }
         });

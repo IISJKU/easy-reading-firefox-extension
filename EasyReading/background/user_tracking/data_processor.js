@@ -2,13 +2,14 @@
  * Pre-process a given sample so it fits the expected state format
  */
 function preProcessSample(labels, sample) {
+    const f_ignore = ['timestamp', 'label', 'gaze_x', 'gaze_y'];
     let sample_clean = [];
     let n_labels = labels.length;
     let n_features = sample.length;
     if (n_features && n_features === n_labels) {
         for (let i=0; i<n_features; i++) {
             let feature_name = labels[i];
-            if (feature_name !== 'timestamp' && feature_name !== 'label') {
+            if (f_ignore.indexOf(feature_name) < 0) {
                 let value = sample[i];
                 let clean_value = null;
                 if (feature_name === 'fixation_ms') {
@@ -27,6 +28,52 @@ function preProcessSample(labels, sample) {
         }
     }
     return sample_clean;
+}
+
+/**
+ * Get representative gaze position for the given samples
+ */
+function get_gaze(labels, samples) {
+    let gaze_x = -1;
+    let gaze_y = -1;
+    let n_labels = labels.length;
+    let x_i = labels.indexOf('gaze_x');
+    let y_i = labels.indexOf('gaze_y');
+    let longest_fixation = -1;
+    if (x_i > -1 && y_i > -1) {
+        if (samples.length === 1) {
+            let s = samples[0];
+            if (s.length === n_labels) {
+                gaze_x = s[x_i];
+                gaze_y = s[y_i];
+            }
+        } else if (samples.length > 1) {
+            let fix_i = labels.indexOf("fixation_ms");
+            if (fix_i > -1) {
+                for (let i=0; i<samples.length; i++) {
+                    let s = samples[i];
+                    if (s.length === n_labels) {
+                        let fix = s[fix_i];
+                        if (fix > longest_fixation) {
+                            gaze_x = s[x_i];
+                            gaze_y = s[y_i];
+                            longest_fixation = fix;
+                        }
+                    }
+                }
+            } else {  // No fixation info available; simply take last sample
+                for (let i=samples.length-1; i>=0; i--) {
+                    let s = samples[i];
+                    if (s.length === n_labels) {
+                        gaze_x = s[x_i];
+                        gaze_y = s[y_i];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return [gaze_x, gaze_y]
 }
 
 /**
