@@ -5,6 +5,8 @@ let tracking_dialog = {
     // Position where help is requested, not dialog coordinates!
     pos_x: -1,
     pos_y: -1,
+    // IOType with chosen input
+    input: null,
 
     init: function () {
         this.loadDialog();
@@ -42,10 +44,12 @@ let tracking_dialog = {
                 contentScriptController.portToBackGroundScript.postMessage({
                     type: "requestHelpNeeded",
                     posX: tracking_obj.pos_x,
-                    posY: tracking_obj.pos_y
+                    posY: tracking_obj.pos_y,
+                    input: JSON.stringify(tracking_obj.input)
                 });
             } else {
                 console.log('User rejected help');
+                this.reset();
                 contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
             }
         });
@@ -56,11 +60,22 @@ let tracking_dialog = {
       this.dialog = null;
     },
 
-    showDialog(x, y) {
-        this.loadDialog();
-        this.pos_x = x;
-        this.pos_y = y;
-        this.dialog.show();
+    reset() {
+        this.input = null;
+        this.pos_y = -1;
+        this.pos_x = -1;
+    },
+
+    showDialog(x, y, input) {
+        if (this.input === null) {
+            this.loadDialog();
+            this.pos_x = x;
+            this.pos_y = y;
+            this.input = input;
+            this.dialog.show();
+        } else {
+            console.log("Dialog requested but previous dialog not resolved yet. Hiding new dialog.")
+        }
     }
 };
 

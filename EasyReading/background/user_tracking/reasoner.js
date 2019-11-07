@@ -3,6 +3,7 @@ class EasyReadingReasoner {
     // Model hyperparameters
     model_type = 'none';
     is_active = true;
+    is_paused = false;
     testing = true;
     model = null;
     alpha = 0.01; // Step size
@@ -88,6 +89,7 @@ class EasyReadingReasoner {
         this.s_next_buffer = [];
         this.feature_names = [];
         this.gaze_info = [];
+        this.is_paused = false;
         console.log("Reasoner status reset. Collecting new user state");
     }
 
@@ -131,12 +133,15 @@ class EasyReadingReasoner {
      * @returns {string} Action to take next; null if collecting next state's data
      */
     step (message) {
-        let action = null;
-        const labels = Object.keys(message);  // Array keys; not sample labels!
-        const features = Object.values(message);
-        if (!this.is_active || !labels || !features) {
+        if (!this.is_active) {
             return EasyReadingReasoner.A.ignore;
         }
+        const labels = Object.keys(message);  // Array keys; not sample labels!
+        const features = Object.values(message);
+        if (!labels || !features) {
+            return EasyReadingReasoner.A.ignore;
+        }
+        let action = null;
         this.feature_names = labels;  // Precondition: all messages carry same labels
         if (!this.w && !this.model && !this.q_func_a) {
             this.w = tf.zeros([1, labels.length], 'float32');
@@ -230,9 +235,9 @@ class EasyReadingReasoner {
 
         function timeout () {
             setTimeout(function () {
-                if (this_reasoner.waiting_feedback) {
+                if (this_reasoner.waiting_feedback || this_reasoner.is_paused) {
                     let end = performance.now();
-                    if (end - start >= this_reasoner.IDLE_TIME) {
+                    if (!this_reasoner.is_paused && end - start >= this_reasoner.IDLE_TIME) {
                         console.log("Reasoner: user idle. Assuming prediction was correct or user OK.");
                         this_reasoner.setFeedbackAutomatically();
                     } else {

@@ -426,7 +426,7 @@ var background = {
     },
 
     sendFeedbackToReasoner(feedback) {
-        if (trackingWebSocket.isReady() && this.reasoner.active) {
+        if (this.reasoner.active) {
             this.reasoner.setHumanFeedback(feedback);
         }
     }
@@ -434,16 +434,16 @@ var background = {
 };
 
 // Mock tracking session
-let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":401,\"gaze_y\":283}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":401,\"gaze_y\":283}\n";
+let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":382,\"gaze_y\":294}\n";
 
 let allLines = log_example.split(/\r\n|\n/);
 let n_lines = allLines.length;
@@ -547,12 +547,12 @@ browser.runtime.onConnect.addListener(function (p) {
                         });
                     break;
                 case "requestHelpNeeded":
-                    background.sendFeedbackToReasoner("help");
                     if (cloudWebSocket.isConnected) {
                         cloudWebSocket.sendMessage(JSON.stringify({
                             type: "triggerHelp",
                             gaze_x: m.posX,
-                            gaze_y: m.posY
+                            gaze_y: m.posY,
+                            input: m.input,
                         }));
                     }
                     break;
@@ -566,6 +566,32 @@ browser.runtime.onConnect.addListener(function (p) {
                 case "undoHelp":
                     background.sendFeedbackToReasoner("ok");
                     // TODO: undo help
+                    break;
+                case "triggerRequest":
+                case "triggerHelpFailed":
+                    let reset_status = true;
+                    let this_reasoner = this.reasoner;
+                    background.sendFeedbackToReasoner("help");
+                    // Simply forward message to tab content script:
+                    browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
+                            let tab = tabs[0];
+                            if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
+                                let port = portManager.getPort(tab.id);
+                                if (port) {
+                                    port.p.postMessage(m);
+                                    reset_status = false;
+                                }
+                            } else {
+                                console.log("onMessageFromTracking: No active tab found");
+                            }
+                            if (reset_status) {
+                                this_reasoner.resetStatus();
+                            }
+                        },
+                        (error) => {
+                            this_reasoner.resetStatus();
+                        }
+                    );
                     break;
             }
         });

@@ -97,13 +97,30 @@ let contentScriptController = {
                 break;
             case 'askuser':
                 console.log("Displaying tracking dialog");
-                let elem = $(document.elementFromPoint(m.posX, m.posY));
-                // TODO convert elem to proper type
-                tracking_dialog.showDialog(m.posX, m.posY);
+                let input = pageUtils.getParagraphUnderPosition(m.posX, m.posY);  // Debug mode must be false!
+                console.log(input);
+                tracking_dialog.showDialog(m.posX, m.posY, input);
                 break;
             case 'triggerhelp':
                 console.log("Displaying confirm help dialog");
                 confirm_dialog.showDialog();
+                break;
+            case 'triggerRequest':
+                try {
+                    if (tracking_dialog.input !== null && 'widget' in m) {
+                        let widget = JSON.parse(m.widget);
+                        requestManager.createRequest(widget, tracking_dialog.input, false);
+                    }
+                } catch (error) {
+                    if (error instanceof SyntaxError) {
+                        console.log("triggerRequest message: received widget is not valid JSON!");
+                    }
+                } finally {
+                    tracking_dialog.reset();
+                }
+                break;
+            case 'triggerHelpFailed':
+                tracking_dialog.reset();
                 break;
         }
     },
