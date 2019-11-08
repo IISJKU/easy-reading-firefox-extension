@@ -49,7 +49,7 @@ let tracking_dialog = {
                 });
             } else {
                 console.log('User rejected help');
-                this.reset();
+                tracking_obj.reset();
                 contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
             }
         });
@@ -67,14 +67,14 @@ let tracking_dialog = {
     },
 
     showDialog(x, y, input) {
-        if (this.input === null) {
+        if (!this.input) {
             this.loadDialog();
             this.pos_x = x;
             this.pos_y = y;
             this.input = input;
             this.dialog.show();
         } else {
-            console.log("Dialog requested but previous dialog not resolved yet. Hiding new dialog.")
+            console.log("Dialog requested but previous dialog not resolved yet. Hiding new dialog.");
         }
     }
 };

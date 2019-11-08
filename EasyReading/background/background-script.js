@@ -593,6 +593,9 @@ browser.runtime.onConnect.addListener(function (p) {
                         }
                     );
                     break;
+                case "resetReasoner":
+                    this_reasoner.resetStatus();
+                    break;
             }
         });
 

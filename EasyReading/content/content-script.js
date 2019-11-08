@@ -99,10 +99,15 @@ let contentScriptController = {
                 this.scriptManager = m.data;
                 break;
             case 'askuser':
-                console.log("Displaying tracking dialog");
                 let input = pageUtils.getParagraphUnderPosition(m.posX, m.posY);  // Debug mode must be false!
-                console.log(input);
-                tracking_dialog.showDialog(m.posX, m.posY, input);
+                if (input) {
+                    console.log("Displaying tracking dialog");
+                    tracking_dialog.showDialog(m.posX, m.posY, input);
+                } else {
+                    console.log("No input found. Dialog not shown.");
+                    tracking_dialog.reset();
+                    this.portToBackGroundScript.postMessage({type: "resetReasoner"});
+                }
                 break;
             case 'triggerhelp':
                 console.log("Displaying confirm help dialog");
