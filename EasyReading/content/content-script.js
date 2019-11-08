@@ -116,13 +116,10 @@ let contentScriptController = {
             case 'triggerRequest':
                 try {
                     if (tracking_dialog.input !== null && 'widget' in m) {
-                        let widget = JSON.parse(m.widget);
-                        requestManager.createRequest(widget, tracking_dialog.input, false);
+                        requestManager.createRequest(m.widget, tracking_dialog.input, false);
                     }
                 } catch (error) {
-                    if (error instanceof SyntaxError) {
-                        console.log("triggerRequest message: received widget is not valid JSON!");
-                    }
+                        console.log('triggerRequest error:' + error);
                 } finally {
                     tracking_dialog.reset();
                 }

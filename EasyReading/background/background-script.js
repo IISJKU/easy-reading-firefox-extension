@@ -208,6 +208,12 @@ var background = {
 
             }
                 break;
+            case "triggerRequest":
+            case "triggerHelpFailed":
+                background.sendFeedbackToReasoner("help");
+                // Forward message to tab content script
+                portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
+                break;
             default:
                 console.log("Error: Unknown message type:" + receivedMessage.type);
                 console.log(message);
@@ -489,10 +495,7 @@ browser.runtime.onConnect.addListener(function (p) {
             switch (m.type) {
                 case "cloudRequest":
                     //Add window id and tab id to the request, so that it can be send back to the original content script
-                    m.windowInfo = {
-                        tabId: p.sender.tab.id,
-                        windowId: p.sender.tab.windowId,
-                    };
+                    portManager.addPortInfoToMessage(m, p);
                     cloudWebSocket.sendMessage(JSON.stringify(m));
                     break;
                 case "getUserProfile":
@@ -548,12 +551,14 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "requestHelpNeeded":
                     if (cloudWebSocket.isConnected) {
-                        cloudWebSocket.sendMessage(JSON.stringify({
+                        let msg = {
                             type: "triggerHelp",
                             gaze_x: m.posX,
                             gaze_y: m.posY,
                             input: m.input,
-                        }));
+                        };
+                        portManager.addPortInfoToMessage(msg, p);
+                        cloudWebSocket.sendMessage(JSON.stringify(msg));
                     }
                     break;
                 case "toolTriggered":
@@ -567,34 +572,10 @@ browser.runtime.onConnect.addListener(function (p) {
                     background.sendFeedbackToReasoner("ok");
                     // TODO: undo help
                     break;
-                case "triggerRequest":
-                case "triggerHelpFailed":
-                    let reset_status = true;
-                    let this_reasoner = this.reasoner;
-                    background.sendFeedbackToReasoner("help");
-                    // Simply forward message to tab content script:
-                    browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
-                            let tab = tabs[0];
-                            if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
-                                let port = portManager.getPort(tab.id);
-                                if (port) {
-                                    port.p.postMessage(m);
-                                    reset_status = false;
-                                }
-                            } else {
-                                console.log("onMessageFromTracking: No active tab found");
-                            }
-                            if (reset_status) {
-                                this_reasoner.resetStatus();
-                            }
-                        },
-                        (error) => {
-                            this_reasoner.resetStatus();
-                        }
-                    );
-                    break;
                 case "resetReasoner":
-                    this_reasoner.resetStatus();
+                    if (background.reasoner) {
+                        background.reasoner.resetStatus();
+                    }
                     break;
             }
         });
@@ -645,8 +626,14 @@ let portManager = {
             }
         }
 
-    }
+    },
 
+    addPortInfoToMessage(m, p) {
+        m.windowInfo = {
+            tabId: p.sender.tab.id,
+            windowId: p.sender.tab.windowId,
+        };
+    }
 
 };
 
