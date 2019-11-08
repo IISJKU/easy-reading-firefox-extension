@@ -85,7 +85,10 @@ let contentScriptController = {
                 this.portToBackGroundScript.postMessage({type: "startUpComplete"});
                 break;
             case "userLogout":
-                if (this.scriptManager.debugMode) {
+
+                this.profileReceived = false;
+
+                if(this.scriptManager.debugMode){
                     let event = new CustomEvent("userLogout");
                     document.dispatchEvent(event);
                 } else {
