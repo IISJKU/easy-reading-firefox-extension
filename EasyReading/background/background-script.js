@@ -197,6 +197,7 @@ var background = {
 
                 break;
             case "cloudRequestResult":
+                background.reasoner.is_paused = false;
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
                 // getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
                 // ports[receivedMessage.data.tab_id].postMessage(receivedMessage);
@@ -205,11 +206,11 @@ var background = {
 
                 await background.logoutUser();
 
-
             }
                 break;
-            case "triggerRequest":
             case "triggerHelpFailed":
+                background.reasoner.is_paused = false;
+            case "triggerRequest":
                 background.sendFeedbackToReasoner("help");
                 // Forward message to tab content script
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
@@ -297,8 +298,8 @@ var background = {
                                             posY: pos_y,
                                         });
                                 } else {
-                                    // TODO trigger preferred help
                                     console.log('Action taken: show help');
+                                    background.reasoner.is_paused = true;  // Pause reasoner until help triggered
                                     port.p.postMessage(
                                         {   type: "triggerhelp",
                                             posX: pos_x,
@@ -432,7 +433,7 @@ var background = {
     },
 
     sendFeedbackToReasoner(feedback) {
-        if (this.reasoner.active) {
+        if (this.reasoner.active && !this.reasoner.is_paused) {
             this.reasoner.setHumanFeedback(feedback);
         }
     }
@@ -562,15 +563,18 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "toolTriggered":
+                    background.sendFeedbackToReasoner("help");
+                    break;
                 case "confirmHelp":
+                    background.reasoner.is_paused = false;
                     background.sendFeedbackToReasoner("help");
                     break;
                 case "requestHelpRejected":
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "undoHelp":
+                    background.reasoner.is_paused = false;
                     background.sendFeedbackToReasoner("ok");
-                    // TODO: undo help
                     break;
                 case "resetReasoner":
                     if (background.reasoner) {

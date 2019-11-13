@@ -83,8 +83,10 @@ let confirm_dialog = {
 
     dialog: null,
     help_accepted: true,
-    pos_x: -1,
-    pos_y: -1,
+    input: null,
+    ui: -1,
+    tool: -1,
+    in_progress: false,
 
     init: function () {
         this.loadDialog();
@@ -92,6 +94,7 @@ let confirm_dialog = {
 
     loadDialog() {
         let tracking_obj = this;
+        tracking_obj.in_progress = true;
         this.dialog = new Noty({
             id: 'er-user-tracking-feedback-dialog',
             type: 'information',
@@ -124,19 +127,54 @@ let confirm_dialog = {
                 });
             } else {
                 console.log('User rejected given help');
+                requestManager.cancelRequest(
+                    easyReading.userInterfaces[tracking_obj.ui].tools[tracking_obj.tool]
+                );
                 contentScriptController.portToBackGroundScript.postMessage({type: "undoHelp"});
             }
+            tracking_obj.reset();
         });
-        this.help_accepted = true;
     },
 
     cleanDialog() {
         this.dialog = null;
     },
 
+    reset() {
+        this.input = null;
+        this.ui = -1;
+        this.tool = -1;
+        this.in_progress = false;
+    },
+
+    setInput(input) {
+        if (!this.input) {
+            this.input = input;
+        } else {
+            console.log("Confirm dialog assigned new input but previous dialog not resolved yet. Ignoring new input");
+        }
+    },
+
+    setTool(ui_index, tool_index) {
+        if (this.input) {
+            this.ui = ui_index;
+            this.tool = tool_index;
+        } else {
+            console.log("Confirm dialog assigned a tool no input stored. Skipping dialog.");
+        }
+    },
+
     showDialog() {
-        this.loadDialog();
-        this.dialog.show();
+        if (this.in_progress) {
+            if (this.input) {
+                this.loadDialog();
+                this.dialog.show();
+            } else {
+                console.log("Confirm dialog requested but no input stored. Skipping dialog.");
+            }
+        } else {
+            console.log("Confirm dialog requested but previous dialog not resolved yet. Hiding new dialog.");
+        }
     }
 };
 

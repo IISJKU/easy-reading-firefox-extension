@@ -152,7 +152,7 @@ class EasyReadingReasoner {
             if (n > this.BUFFER_SIZE) {
                 this.s_buffer.shift();
             }
-            if (! this.waiting_feedback) {
+            if (!this.waiting_feedback && !this.is_paused) {
                 let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
                 if (state) {
                     this.updateGazeInfo(labels);  // Save gaze position of current state
@@ -235,7 +235,7 @@ class EasyReadingReasoner {
 
         function timeout () {
             setTimeout(function () {
-                if (this_reasoner.waiting_feedback || this_reasoner.is_paused) {
+                if (this_reasoner.waiting_feedback && !this_reasoner.is_paused) {
                     let end = performance.now();
                     if (!this_reasoner.is_paused && end - start >= this_reasoner.IDLE_TIME) {
                         console.log("Reasoner: user idle. Assuming prediction was correct or user OK.");

@@ -16,19 +16,22 @@ let contentScriptController = {
     },
 
     receiveMessageFromBackgroundScript : function (m) {
+        let input = null;
         switch (m.type) {
             case "cloudRequestResult":
-                if(this.scriptManager.debugMode){
 
+                if(this.scriptManager.debugMode){
                     let el = document.querySelector('#easy-reading-debug');
                     el.setAttribute('data-result', JSON.stringify(m));
-
                     let event = new CustomEvent("cloudRequestResult");
                     document.dispatchEvent(event);
-
                 }else{
-
                     requestManager.receiveRequestResult(m);
+                }
+
+                if (m.agent === "reasoner") {
+                    // Help was automatically triggered by reasoner. Ask user if help is actually needed.
+                    confirm_dialog.showDialog();
                 }
 
                 break;
@@ -99,7 +102,7 @@ let contentScriptController = {
                 this.scriptManager = m.data;
                 break;
             case 'askuser':
-                let input = pageUtils.getParagraphUnderPosition(m.posX, m.posY);  // Debug mode must be false!
+                input = pageUtils.getParagraphUnderPosition(m.posX, m.posY);  // Debug mode must be false!
                 if (input) {
                     console.log("Displaying tracking dialog");
                     tracking_dialog.showDialog(m.posX, m.posY, input);
@@ -110,13 +113,36 @@ let contentScriptController = {
                 }
                 break;
             case 'triggerhelp':
-                console.log("Displaying confirm help dialog");
-                confirm_dialog.showDialog();
+                let gazeX = m.posX;
+                let gazeY = m.posY;
+                input = pageUtils.getParagraphUnderPosition(gazeX, gazeY);
+                if (input) {
+                    contentScriptController.portToBackGroundScript.postMessage({
+                        type: "requestHelpNeeded",
+                        posX: gazeX,
+                        posY: gazeY,
+                        input: JSON.stringify(input)
+                    });
+                    confirm_dialog.setInput(input);
+                } else {
+                    console.log("No input found. Help could not be triggered.");
+                    this.portToBackGroundScript.postMessage({type: "resetReasoner"});
+                }
                 break;
             case 'triggerRequest':
                 try {
-                    if (tracking_dialog.input !== null && 'widget' in m) {
-                        requestManager.createRequest(m.widget, tracking_dialog.input, false);
+                    if ('ui_i' in m && 'tool_i' in m) {
+                        let ui = easyReading.userInterfaces[m['ui_i']];
+                        let tool = ui.tools[m['tool_i']];
+                        if (tool) {
+                            if (tracking_dialog.input !== null) {
+                                requestManager.createRequest(tool.widget, tracking_dialog.input, false);
+                            }
+                            if (confirm_dialog.input !== null) {
+                                confirm_dialog.setTool(m['ui_i'], m['tool_i']);
+                                requestManager.createRequest(tool.widget, confirm_dialog.input, false, true);
+                            }
+                        }
                     }
                 } catch (error) {
                         console.log('triggerRequest error:' + error);
@@ -126,6 +152,7 @@ let contentScriptController = {
                 break;
             case 'triggerHelpFailed':
                 tracking_dialog.reset();
+                confirm_dialog.reset();
                 break;
         }
     },
