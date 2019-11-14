@@ -197,7 +197,6 @@ var background = {
 
                 break;
             case "cloudRequestResult":
-                background.reasoner.is_paused = false;
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
                 // getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
                 // ports[receivedMessage.data.tab_id].postMessage(receivedMessage);
@@ -209,8 +208,11 @@ var background = {
             }
                 break;
             case "triggerHelpFailed":
-                background.reasoner.is_paused = false;
+                background.reasoner.resetStatus();
+                portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
+                break;
             case "triggerRequest":
+                background.reasoner.unfreeze();
                 background.sendFeedbackToReasoner("help");
                 // Forward message to tab content script
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
@@ -299,7 +301,6 @@ var background = {
                                         });
                                 } else {
                                     console.log('Action taken: show help');
-                                    background.reasoner.is_paused = true;  // Pause reasoner until help triggered
                                     port.p.postMessage(
                                         {   type: "triggerhelp",
                                             posX: pos_x,
@@ -433,10 +434,15 @@ var background = {
     },
 
     sendFeedbackToReasoner(feedback) {
-        if (this.reasoner.active && !this.reasoner.is_paused) {
-            this.reasoner.setHumanFeedback(feedback);
+        if (this.reasoner.active) {
+            if (this.reasoner.is_paused) {
+                this.reasoner.stored_feedback = feedback;
+            } else {
+                this.reasoner.setHumanFeedback(feedback);
+                this.reasoner.collectNextStateAndUpdate();
+            }
         }
-    }
+    },
 
 };
 
@@ -490,8 +496,6 @@ browser.runtime.onConnect.addListener(function (p) {
         // ports[p.sender.tab.id] = p;
         var currentPort = p;
         currentPort.onMessage.addListener(async function (m) {
-
-            console.log(m);
 
             switch (m.type) {
                 case "cloudRequest":
@@ -551,6 +555,8 @@ browser.runtime.onConnect.addListener(function (p) {
                         });
                     break;
                 case "requestHelpNeeded":
+                    console.log('freezing reasoner');
+                    background.reasoner.freeze();
                     if (cloudWebSocket.isConnected) {
                         let msg = {
                             type: "triggerHelp",
@@ -560,26 +566,35 @@ browser.runtime.onConnect.addListener(function (p) {
                         };
                         portManager.addPortInfoToMessage(msg, p);
                         cloudWebSocket.sendMessage(JSON.stringify(msg));
+                    } else {
+                        console.log('Websocket to cloud not connected, can\'t help user');
                     }
                     break;
                 case "toolTriggered":
-                    background.sendFeedbackToReasoner("help");
+                    if (background.reasoner.active) {
+                        background.reasoner.setSuddenHelpFeedback();
+                    }
                     break;
                 case "confirmHelp":
-                    background.reasoner.is_paused = false;
                     background.sendFeedbackToReasoner("help");
                     break;
                 case "requestHelpRejected":
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "undoHelp":
-                    background.reasoner.is_paused = false;
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "resetReasoner":
                     if (background.reasoner) {
                         background.reasoner.resetStatus();
                     }
+                    break;
+                case "helpComplete":
+                    /*if (background.reasoner) {
+                        // Forget everything that happened between agent was updated and help finished
+                        console.log('Request finished; resetting reasoner status');
+                        background.reasoner.resetStatus();
+                    }*/
                     break;
             }
         });

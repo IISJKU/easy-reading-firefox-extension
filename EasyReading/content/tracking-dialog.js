@@ -7,6 +7,8 @@ let tracking_dialog = {
     pos_y: -1,
     // IOType with chosen input
     input: null,
+    ui: -1,
+    tool: -1,
 
     init: function () {
         this.loadDialog();
@@ -64,6 +66,15 @@ let tracking_dialog = {
         this.input = null;
         this.pos_y = -1;
         this.pos_x = -1;
+    },
+
+    setTool(ui_index, tool_index) {
+        if (this.input) {
+            this.ui = ui_index;
+            this.tool = tool_index;
+        } else {
+            console.log("Tracking dialog assigned a tool no input stored. Skipping dialog.");
+        }
     },
 
     showDialog(x, y, input) {

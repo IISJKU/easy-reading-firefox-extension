@@ -136,6 +136,7 @@ let contentScriptController = {
                         let tool = ui.tools[m['tool_i']];
                         if (tool) {
                             if (tracking_dialog.input !== null) {
+                                tracking_dialog.setTool(m['ui_i'], m['tool_i']);
                                 requestManager.createRequest(tool.widget, tracking_dialog.input, false);
                             }
                             if (confirm_dialog.input !== null) {
@@ -145,7 +146,7 @@ let contentScriptController = {
                         }
                     }
                 } catch (error) {
-                        console.log('triggerRequest error:' + error);
+                    console.log('triggerRequest error:' + error);
                 } finally {
                     tracking_dialog.reset();
                 }

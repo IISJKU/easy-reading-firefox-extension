@@ -43,10 +43,14 @@ class EasyReadingReasoner {
 
     // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
+    NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
+    UNFREEZE_TIME = 60000;  // Time to automatically unfreeze paused reasoner (1 minute)
     BUFFER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
     gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
+    stored_feedback = null;
+    cancel_unfreeze = false;
 
     // Sub-models
     q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
@@ -89,7 +93,8 @@ class EasyReadingReasoner {
         this.s_next_buffer = [];
         this.feature_names = [];
         this.gaze_info = [];
-        this.is_paused = false;
+        this.stored_feedback = null;
+        this.unfreeze();
         console.log("Reasoner status reset. Collecting new user state");
     }
 
@@ -235,7 +240,7 @@ class EasyReadingReasoner {
 
         function timeout () {
             setTimeout(function () {
-                if (this_reasoner.waiting_feedback && !this_reasoner.is_paused) {
+                if (this_reasoner.waiting_feedback) {
                     let end = performance.now();
                     if (!this_reasoner.is_paused && end - start >= this_reasoner.IDLE_TIME) {
                         console.log("Reasoner: user idle. Assuming prediction was correct or user OK.");
@@ -256,15 +261,17 @@ class EasyReadingReasoner {
             case EasyReadingReasoner.A.askUser:  // User remained idle during dialog --> assume OK
             case EasyReadingReasoner.A.nop:
                 this.setHumanFeedback("ok");
+                this.updateModel();
                 break;
             case EasyReadingReasoner.A.showHelp:
                 this.setHumanFeedback("help");
+                this.updateModel();
                 break;
         } 
     }
 
     /**
-     * Update current user status according to human feedback
+     * Compute reward and update current user status according to human feedback
      * @param feedback: "help" or "ok" (help not needed)
      */
     setHumanFeedback(feedback) {
@@ -276,16 +283,19 @@ class EasyReadingReasoner {
         this.reward = this.humanFeedbackToReward(user_status);
         console.log("Reasoner: setting reward to " + this.reward);
         this.user_status = user_status;
+    }
+
+    /**
+     * Update model according to current state, reward, and next state
+     */
+    updateModel() {
+        this.is_active = false;
         this.s_next = tf.tensor1d(
             preProcessSample(
                 this.feature_names,
                 this.aggregateStates(this.s_next_buffer)
             )
         );
-        this.updateModel();
-    }
-
-    updateModel() {
         if (this.q_func_a) {
             if (this.q_func_b) {
                 this.updateDoubleQModel();
@@ -295,12 +305,76 @@ class EasyReadingReasoner {
         }
         this.last_action = null;
         this.collect_t = 'before';
+        console.log('collecting previous state');
         this.s_buffer = [];
         this.s_next_buffer = [];
         if (this.t_current >= this.episode_length) {
             this.episodeEnd();
         }
+        this.is_active = true;
         //console.log('Reasoner model updated. Collecting new user state');
+    }
+
+    /**
+     * Handle the manual trigger of a tool that may interrupt the agent's loop
+     */
+    setSuddenHelpFeedback() {
+        this.setHumanFeedback("help");
+        if (this.last_action !== null) {
+            if (this.last_action === EasyReadingReasoner.A.nop) {
+                // NOP already waits, therefore no need to wait before update
+                this.updateModel();
+            } else {
+                this.collectNextStateAndUpdate();
+            }
+        }
+    }
+
+    collectNextStateAndUpdate() {
+        let this_reasoner = this;
+        let start = performance.now();
+        function waitBeforeUpdate () {
+            setTimeout(function () {
+                let end = performance.now();
+                if (end - start >= this_reasoner.NEXT_STATE_TIME) {
+                    console.log('Next state collected. Updating model');
+                    this_reasoner.updateModel();
+                } else {
+                    waitBeforeUpdate();
+                }
+            }, 500);
+        }
+        if (this.collect_t === 'before') {
+            waitBeforeUpdate();
+        } else {
+            this.resetStatus();  // This should never happen
+        }
+    }
+
+    freeze() {
+        this.is_paused = true;
+        // Unfreeze reasoner if paused for too long
+        let this_reasoner = this;
+        let start = performance.now();
+        function selfUnfreeze () {
+            setTimeout(function () {
+                let end = performance.now();
+                if (!this_reasoner.cancel_unfreeze) {
+                    if (end - start >= this_reasoner.UNFREEZE_TIME) {
+                        console.log('Agent paused for too long. Unfreezing now.');
+                        this_reasoner.resetStatus();
+                    } else {
+                        selfUnfreeze();
+                    }
+                }
+            }, 500);
+        }
+        selfUnfreeze();
+    }
+
+    unfreeze() {
+        this.is_paused = false;
+        this.cancel_unfreeze = true;
     }
 
     updateQModel() {
