@@ -23,6 +23,7 @@ class EasyReadingReasoner {
             } else {
                 console.log("Reasoner disabled");
                 this.resetStatus();
+                console.log('Reset by set active');
             }
         }
     }
@@ -44,7 +45,7 @@ class EasyReadingReasoner {
     // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
-    UNFREEZE_TIME = 60000;  // Time to automatically unfreeze paused reasoner (1 minute)
+    UNFREEZE_TIME = 120000;  // Time to automatically unfreeze paused reasoner (2 minutes)
     BUFFER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
@@ -100,6 +101,7 @@ class EasyReadingReasoner {
 
     loadModel(n_features, m_type='perceptron') {
         this.resetStatus();
+        console.log('Reset by loadModel');
         if (m_type === 'sequential') {
             this.loadSequentialModel(n_features);
         } else if (m_type.startsWith('q_learning') || m_type.startsWith('double_q_l')) {
@@ -153,18 +155,20 @@ class EasyReadingReasoner {
         }
         // Push sample to corresponding buffer
         if (this.collect_t === 'before') {
-            let n = this.s_buffer.push(features);
-            if (n > this.BUFFER_SIZE) {
-                this.s_buffer.shift();
-            }
-            if (!this.waiting_feedback && !this.is_paused) {
-                let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
-                if (state) {
-                    this.updateGazeInfo(labels);  // Save gaze position of current state
-                    action = this.predict(state);
-                    this.collect_t = 'after';
-                    this.waiting_feedback = true;
+            if (!this.is_paused) {
+                let n = this.s_buffer.push(features);
+                if (n > this.BUFFER_SIZE) {
+                    this.s_buffer.shift();
                 }
+                if (!this.waiting_feedback) {
+                    let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
+                    if (state) {
+                        this.updateGazeInfo(labels);  // Save gaze position of current state
+                        action = this.predict(state);
+                    }
+                }
+            } else {
+                console.log('Ignore tracking data because reasoner paused.');
             }
         } else {  // Collecting next state; take no action
             let n = this.s_next_buffer.push(features);
@@ -233,11 +237,10 @@ class EasyReadingReasoner {
      * Observe next state after having taken an action
      */
     waitForUserReaction() {
+        this.startCollectingNextState();
+        console.log("Collecting next state (waiting for user's reaction)");
         let start = performance.now();
         let this_reasoner = this;
-        this.collect_t = "after";
-        console.log("Collecting next state (waiting for user's reaction)");
-
         function timeout () {
             setTimeout(function () {
                 if (this_reasoner.waiting_feedback) {
@@ -286,16 +289,17 @@ class EasyReadingReasoner {
     }
 
     /**
-     * Update model according to current state, reward, and next state
+     * Update model according to current state (S), reward (R), and next state (S_next).
+     * After updating the model, end current episode and start collecting S again.
      */
     updateModel() {
-        this.is_active = false;
-        this.s_next = tf.tensor1d(
-            preProcessSample(
-                this.feature_names,
-                this.aggregateStates(this.s_next_buffer)
-            )
-        );
+        let s_next = this.aggregateStates(this.s_next_buffer);
+        if (s_next.length === 0) {
+            console.log('Trying to update model without having collected S_next. Collecting S_next now.');
+            this.collectNextStateAndUpdate();
+            return;
+        }
+        this.s_next = tf.tensor1d(preProcessSample(this.feature_names, s_next));
         if (this.q_func_a) {
             if (this.q_func_b) {
                 this.updateDoubleQModel();
@@ -305,13 +309,13 @@ class EasyReadingReasoner {
         }
         this.last_action = null;
         this.collect_t = 'before';
-        console.log('collecting previous state');
+        this.waiting_feedback = false;
+        console.log('collecting current state (S)');
         this.s_buffer = [];
         this.s_next_buffer = [];
         if (this.t_current >= this.episode_length) {
             this.episodeEnd();
         }
-        this.is_active = true;
         //console.log('Reasoner model updated. Collecting new user state');
     }
 
@@ -319,18 +323,32 @@ class EasyReadingReasoner {
      * Handle the manual trigger of a tool that may interrupt the agent's loop
      */
     setSuddenHelpFeedback() {
-        this.setHumanFeedback("help");
         if (this.last_action !== null) {
+            this.setHumanFeedback("help");
             if (this.last_action === EasyReadingReasoner.A.nop) {
                 // NOP already waits, therefore no need to wait before update
                 this.updateModel();
             } else {
                 this.collectNextStateAndUpdate();
             }
+        } else {
+            this.resetStatus();
         }
     }
 
+    /**
+     * We already have S and R, start collecting S_next. Model update will be triggered externally.
+     */
+    startCollectingNextState() {
+        this.collect_t = 'after';
+        this.waiting_feedback = true;
+    }
+
+    /**
+     * We already have S and R, collect S_next and update
+     */
     collectNextStateAndUpdate() {
+        this.startCollectingNextState();
         let this_reasoner = this;
         let start = performance.now();
         function waitBeforeUpdate () {
@@ -344,10 +362,11 @@ class EasyReadingReasoner {
                 }
             }, 500);
         }
-        if (this.collect_t === 'before') {
+        if (this.collect_t === 'after') {
             waitBeforeUpdate();
         } else {
             this.resetStatus();  // This should never happen
+            console.log('Trying to collect S_next but not possible. Resetting reasoner.');
         }
     }
 

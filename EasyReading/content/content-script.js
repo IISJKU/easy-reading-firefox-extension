@@ -137,10 +137,17 @@ let contentScriptController = {
                         if (tool) {
                             if (tracking_dialog.input !== null) {
                                 tracking_dialog.setTool(m['ui_i'], m['tool_i']);
-                                requestManager.createRequest(tool.widget, tracking_dialog.input, false);
+                                tool.widget.activateWidget();
+                                globalEventListener.paragraphClickListener({
+                                    target: document.elementFromPoint(m.x, m.y),
+                                    clientX: m.x,
+                                    clientY: m.y,
+                                    user_triggered: false,
+                                })
                             }
                             if (confirm_dialog.input !== null) {
                                 confirm_dialog.setTool(m['ui_i'], m['tool_i']);
+                                // TODO: use widget instead of request, as above
                                 requestManager.createRequest(tool.widget, confirm_dialog.input, false, true);
                             }
                         }

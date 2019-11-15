@@ -52,6 +52,7 @@ var trackingWebSocket = {
     onClose: function (event) {
         trackingWebSocket.isConnected = false;
         trackingWebSocket.webSocket = undefined;
+        background.onDisconnectFromTracking("Connection to user tracking was closed.");
     },
 
     onError: function (event) {

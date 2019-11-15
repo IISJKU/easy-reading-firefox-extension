@@ -209,11 +209,16 @@ var background = {
                 break;
             case "triggerHelpFailed":
                 background.reasoner.resetStatus();
+                console.log('Reset by triggerHelpFailed');
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
                 break;
             case "triggerRequest":
                 background.reasoner.unfreeze();
-                background.sendFeedbackToReasoner("help");
+                let wait = false;
+                if (receivedMessage.waitForPresentation) {
+                    wait = true;
+                }
+                background.sendFeedbackToReasoner("help", wait);
                 // Forward message to tab content script
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
                 break;
@@ -229,7 +234,7 @@ var background = {
         if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
             background.logoutUser(error);
         }
-
+        trackingWebSocket.closeWebSocket();
     },
 
     onDisconnectFromTracking: async function (error) {
@@ -307,11 +312,11 @@ var background = {
                                             posY: pos_y,
                                         });
                                 }
-                                this_reasoner.waitForUserReaction();
+                                // this_reasoner.waitForUserReaction(); handle differently
                                 reset_status = false;
                             }
                         } else {
-                            console.log("onMessageFromTracking: No active tab found");
+                            console.log("handleReasonerAction: No active tab found");
                         }
                         if (reset_status) {
                             this_reasoner.resetStatus();  // User can't be helped on system tabs
@@ -433,12 +438,12 @@ var background = {
         }
     },
 
-    sendFeedbackToReasoner(feedback) {
+    sendFeedbackToReasoner(feedback, wait=false) {
         if (this.reasoner.active) {
-            if (this.reasoner.is_paused) {
-                this.reasoner.stored_feedback = feedback;
+            this.reasoner.setHumanFeedback(feedback);
+            if (wait) {
+                this.reasoner.startCollectingNextState();
             } else {
-                this.reasoner.setHumanFeedback(feedback);
                 this.reasoner.collectNextStateAndUpdate();
             }
         }
@@ -447,16 +452,16 @@ var background = {
 };
 
 // Mock tracking session
-let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":382,\"gaze_y\":294}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":382,\"gaze_y\":294}\n";
+let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":288,\"gaze_y\":153}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":288,\"gaze_y\":153}\n";
 
 let allLines = log_example.split(/\r\n|\n/);
 let n_lines = allLines.length;
@@ -555,6 +560,7 @@ browser.runtime.onConnect.addListener(function (p) {
                         });
                     break;
                 case "requestHelpNeeded":
+                    // Freeze reasoner until response from cloud (triggerRequest or triggerHelpFailed message)
                     console.log('freezing reasoner');
                     background.reasoner.freeze();
                     if (cloudWebSocket.isConnected) {
@@ -572,6 +578,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                     if (background.reasoner.active) {
+                        background.reasoner.freeze();  // Freeze while waiting for response from cloud
                         background.reasoner.setSuddenHelpFeedback();
                     }
                     break;
@@ -584,17 +591,19 @@ browser.runtime.onConnect.addListener(function (p) {
                 case "undoHelp":
                     background.sendFeedbackToReasoner("ok");
                     break;
+                case "helpComplete":
+                case "helpCancelled":
+                    if (background.reasoner.active) {
+                        background.reasoner.unfreeze();
+                        background.reasoner.updateModel();
+                        console.log('Presentation finished or cancelled; trying to update model.');
+                    }
+                    break;
                 case "resetReasoner":
                     if (background.reasoner) {
                         background.reasoner.resetStatus();
+                        console.log('Reset by resetReasoner');
                     }
-                    break;
-                case "helpComplete":
-                    /*if (background.reasoner) {
-                        // Forget everything that happened between agent was updated and help finished
-                        console.log('Request finished; resetting reasoner status');
-                        background.reasoner.resetStatus();
-                    }*/
                     break;
             }
         });

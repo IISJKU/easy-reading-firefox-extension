@@ -139,7 +139,8 @@ let confirm_dialog = {
             } else {
                 console.log('User rejected given help');
                 requestManager.cancelRequest(
-                    easyReading.userInterfaces[tracking_obj.ui].tools[tracking_obj.tool]
+                    easyReading.userInterfaces[tracking_obj.ui].tools[tracking_obj.tool],
+                    true
                 );
                 contentScriptController.portToBackGroundScript.postMessage({type: "undoHelp"});
             }
