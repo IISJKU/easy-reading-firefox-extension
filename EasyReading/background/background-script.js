@@ -214,11 +214,16 @@ var background = {
                 break;
             case "triggerRequest":
                 background.reasoner.unfreeze();
-                let wait = false;
-                if (receivedMessage.waitForPresentation) {
-                    wait = true;
+                let wait_presentation = !! receivedMessage.waitForPresentation;
+                if (receivedMessage.automatic) {
+                    if (wait_presentation) {
+                        background.startCollectingNextState();
+                    } else {
+                        background.waitForUserReaction();
+                    }
+                } else {
+                    background.sendFeedbackToReasoner("help", wait_presentation);
                 }
-                background.sendFeedbackToReasoner("help", wait);
                 // Forward message to tab content script
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
                 break;
@@ -312,7 +317,6 @@ var background = {
                                             posY: pos_y,
                                         });
                                 }
-                                // this_reasoner.waitForUserReaction(); handle differently
                                 reset_status = false;
                             }
                         } else {
@@ -560,6 +564,9 @@ browser.runtime.onConnect.addListener(function (p) {
                         });
                     break;
                 case "requestHelpNeeded":
+                    if (m.automatic === false) {
+                        background.reasoner.user_action = 'help';
+                    }
                     // Freeze reasoner until response from cloud (triggerRequest or triggerHelpFailed message)
                     console.log('freezing reasoner');
                     background.reasoner.freeze();
@@ -569,6 +576,7 @@ browser.runtime.onConnect.addListener(function (p) {
                             gaze_x: m.posX,
                             gaze_y: m.posY,
                             input: m.input,
+                            automatic: m.automatic,  // True if help was triggered by reasoner, false if user-initiated
                         };
                         portManager.addPortInfoToMessage(msg, p);
                         cloudWebSocket.sendMessage(JSON.stringify(msg));
@@ -578,25 +586,31 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                     if (background.reasoner.active) {
+                        background.reasoner.user_action = 'help';
                         background.reasoner.freeze();  // Freeze while waiting for response from cloud
-                        background.reasoner.setSuddenHelpFeedback();
                     }
                     break;
                 case "confirmHelp":
+                    background.reasoner.user_action = 'help';
                     background.sendFeedbackToReasoner("help");
                     break;
                 case "requestHelpRejected":
-                    background.sendFeedbackToReasoner("ok");
-                    break;
                 case "undoHelp":
+                    background.reasoner.user_action = 'ok';
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "helpComplete":
+                    if (background.reasoner.active) {
+                        background.reasoner.unfreeze();
+                        background.reasoner.setHelpDoneFeedback();
+                        console.log('Presentation complete; trying to update model.');
+                    }
+                    break;
                 case "helpCancelled":
                     if (background.reasoner.active) {
                         background.reasoner.unfreeze();
-                        background.reasoner.updateModel();
-                        console.log('Presentation finished or cancelled; trying to update model.');
+                        background.reasoner.setHelpCanceledFeedback();
+                        console.log('Presentation cancelled; trying to update model.');
                     }
                     break;
                 case "resetReasoner":

@@ -47,7 +47,8 @@ let tracking_dialog = {
                     type: "requestHelpNeeded",
                     posX: tracking_obj.pos_x,
                     posY: tracking_obj.pos_y,
-                    input: JSON.stringify(tracking_obj.input)
+                    input: JSON.stringify(tracking_obj.input),
+                    automatic: false,
                 });
             } else {
                 console.log('User rejected help');

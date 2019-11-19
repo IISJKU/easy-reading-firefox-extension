@@ -37,6 +37,7 @@ class EasyReadingReasoner {
     s_curr = null;  // Current state (tensor)
     s_next = null;  // Next state (tensor)
     last_action = null;  // Last action taken
+    user_action = null;  // Action actually taken by user
     t_current = 1;  // Current timestep
     waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
@@ -90,6 +91,7 @@ class EasyReadingReasoner {
         this.collect_t = "before";
         this.reward = 0;
         this.last_action = null;
+        this.user_action = null;
         this.s_buffer = [];
         this.s_next_buffer = [];
         this.feature_names = [];
@@ -270,7 +272,7 @@ class EasyReadingReasoner {
                 this.setHumanFeedback("help");
                 this.updateModel();
                 break;
-        } 
+        }
     }
 
     /**
@@ -293,6 +295,10 @@ class EasyReadingReasoner {
      * After updating the model, end current episode and start collecting S again.
      */
     updateModel() {
+        if (this.last_action === null) {
+            this.resetStatus();
+            console.log('Trying to update model without an action. Resetting status.');
+        }
         let s_next = this.aggregateStates(this.s_next_buffer);
         if (s_next.length === 0) {
             console.log('Trying to update model without having collected S_next. Collecting S_next now.');
@@ -337,11 +343,46 @@ class EasyReadingReasoner {
     }
 
     /**
+     * Handle the manual cancelling of a tool that was helping the user
+     */
+    setHelpCanceledFeedback() {
+        if (this.last_action !== null) {
+            if (this.waiting_feedback) {
+                if (this.user_action === "help") {
+                    this.setHumanFeedback("help");  // User was who triggered help, keep their feedback
+                } else {
+                    this.setHumanFeedback("ok");  // User cancelled automatically triggered help
+                }
+            }
+            this.updateModel();
+        } else {
+            this.resetStatus();
+        }
+    }
+
+    /**
+     * Update the model after a long help has finished presenting its results
+     */
+    setHelpDoneFeedback() {
+        if (this.last_action !== null) {
+            if (this.waiting_feedback) {
+                this.setHumanFeedback("help");
+            }
+            this.updateModel();
+        } else {
+            this.resetStatus();
+        }
+    }
+
+    /**
      * We already have S and R, start collecting S_next. Model update will be triggered externally.
      */
     startCollectingNextState() {
         this.collect_t = 'after';
         this.waiting_feedback = true;
+        if (this.s_next_buffer.length) {
+            this.s_next_buffer = [];
+        }
     }
 
     /**

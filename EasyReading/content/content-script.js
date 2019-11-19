@@ -33,7 +33,6 @@ let contentScriptController = {
                     // Help was automatically triggered by reasoner. Ask user if help is actually needed.
                     confirm_dialog.showDialog();
                 }
-
                 break;
             case "getUserProfile":
                 if(this.profileReceived){
@@ -121,7 +120,8 @@ let contentScriptController = {
                         type: "requestHelpNeeded",
                         posX: gazeX,
                         posY: gazeY,
-                        input: JSON.stringify(input)
+                        input: JSON.stringify(input),
+                        automatic: true,
                     });
                     confirm_dialog.setInput(input);
                 } else {
@@ -130,6 +130,9 @@ let contentScriptController = {
                 }
                 break;
             case 'triggerRequest':
+                let can_trigger = false;
+                let reasoner_triggered = false;
+                let tool = null;
                 try {
                     if ('ui_i' in m && 'tool_i' in m) {
                         let ui = easyReading.userInterfaces[m['ui_i']];
@@ -137,25 +140,32 @@ let contentScriptController = {
                         if (tool) {
                             if (tracking_dialog.input !== null) {
                                 tracking_dialog.setTool(m['ui_i'], m['tool_i']);
-                                tool.widget.activateWidget();
-                                globalEventListener.paragraphClickListener({
-                                    target: document.elementFromPoint(m.x, m.y),
-                                    clientX: m.x,
-                                    clientY: m.y,
-                                    user_triggered: false,
-                                })
+                                can_trigger = true;
                             }
                             if (confirm_dialog.input !== null) {
                                 confirm_dialog.setTool(m['ui_i'], m['tool_i']);
-                                // TODO: use widget instead of request, as above
-                                requestManager.createRequest(tool.widget, confirm_dialog.input, false, true);
+                                can_trigger = true;
+                                reasoner_triggered = true;
                             }
                         }
                     }
                 } catch (error) {
                     console.log('triggerRequest error:' + error);
                 } finally {
+                    if (can_trigger) {
+                        tool.widget.activateWidget();
+                        globalEventListener.paragraphClickListener({
+                            target: document.elementFromPoint(m.x, m.y),
+                            clientX: m.x,
+                            clientY: m.y,
+                            user_triggered: false,
+                            reasoner_triggered: reasoner_triggered,
+                        });
+                    } else {
+                        // TODO
+                    }
                     tracking_dialog.reset();
+                    confirm_dialog.reset();
                 }
                 break;
             case 'triggerHelpFailed':
