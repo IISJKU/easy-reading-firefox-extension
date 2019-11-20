@@ -143,6 +143,11 @@ class EasyReadingReasoner {
      */
     step (message) {
         if (!this.is_active) {
+            console.log('Ignore tracking data because reasoner disabled.');
+            return EasyReadingReasoner.A.ignore;
+        }
+        if (this.is_paused) {
+            console.log('Ignore tracking data because reasoner paused.');
             return EasyReadingReasoner.A.ignore;
         }
         const labels = Object.keys(message);  // Array keys; not sample labels!
@@ -157,20 +162,16 @@ class EasyReadingReasoner {
         }
         // Push sample to corresponding buffer
         if (this.collect_t === 'before') {
-            if (!this.is_paused) {
-                let n = this.s_buffer.push(features);
-                if (n > this.BUFFER_SIZE) {
-                    this.s_buffer.shift();
+            let n = this.s_buffer.push(features);
+            if (n > this.BUFFER_SIZE) {
+                this.s_buffer.shift();
+            }
+            if (!this.waiting_feedback) {
+                let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
+                if (state) {
+                    this.updateGazeInfo(labels);  // Save gaze position of current state
+                    action = this.predict(state);
                 }
-                if (!this.waiting_feedback) {
-                    let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
-                    if (state) {
-                        this.updateGazeInfo(labels);  // Save gaze position of current state
-                        action = this.predict(state);
-                    }
-                }
-            } else {
-                console.log('Ignore tracking data because reasoner paused.');
             }
         } else {  // Collecting next state; take no action
             let n = this.s_next_buffer.push(features);
@@ -286,7 +287,7 @@ class EasyReadingReasoner {
             user_status = EasyReadingReasoner.user_S.confused;
         }
         this.reward = this.humanFeedbackToReward(user_status);
-        console.log("Reasoner: setting reward to " + this.reward);
+        console.log("Got feedback " + feedback + ". Setting reward to " + this.reward);
         this.user_status = user_status;
     }
 
@@ -307,6 +308,7 @@ class EasyReadingReasoner {
         }
         this.s_next = tf.tensor1d(preProcessSample(this.feature_names, s_next));
         if (this.q_func_a) {
+            console.log('Updating Q model');
             if (this.q_func_b) {
                 this.updateDoubleQModel();
             } else {
@@ -316,29 +318,11 @@ class EasyReadingReasoner {
         this.last_action = null;
         this.collect_t = 'before';
         this.waiting_feedback = false;
-        console.log('collecting current state (S)');
+        console.log('Collecting current state (S)');
         this.s_buffer = [];
         this.s_next_buffer = [];
         if (this.t_current >= this.episode_length) {
             this.episodeEnd();
-        }
-        //console.log('Reasoner model updated. Collecting new user state');
-    }
-
-    /**
-     * Handle the manual trigger of a tool that may interrupt the agent's loop
-     */
-    setSuddenHelpFeedback() {
-        if (this.last_action !== null) {
-            this.setHumanFeedback("help");
-            if (this.last_action === EasyReadingReasoner.A.nop) {
-                // NOP already waits, therefore no need to wait before update
-                this.updateModel();
-            } else {
-                this.collectNextStateAndUpdate();
-            }
-        } else {
-            this.resetStatus();
         }
     }
 
@@ -349,8 +333,10 @@ class EasyReadingReasoner {
         if (this.last_action !== null) {
             if (this.waiting_feedback) {
                 if (this.user_action === "help") {
+                    console.log('User canceled own help request');
                     this.setHumanFeedback("help");  // User was who triggered help, keep their feedback
                 } else {
+                    console.log('User canceled automatic help'); // TODO next; this is not called
                     this.setHumanFeedback("ok");  // User cancelled automatically triggered help
                 }
             }
@@ -367,8 +353,10 @@ class EasyReadingReasoner {
         if (this.last_action !== null) {
             if (this.waiting_feedback) {
                 this.setHumanFeedback("help");
+                this.updateModel();
+            } else {
+                console.log('Help done but agent not waiting anymore');
             }
-            this.updateModel();
         } else {
             this.resetStatus();
         }
@@ -378,6 +366,7 @@ class EasyReadingReasoner {
      * We already have S and R, start collecting S_next. Model update will be triggered externally.
      */
     startCollectingNextState() {
+        console.log('Reasoner: collecting next state (S_next)');
         this.collect_t = 'after';
         this.waiting_feedback = true;
         if (this.s_next_buffer.length) {
@@ -393,10 +382,11 @@ class EasyReadingReasoner {
         let this_reasoner = this;
         let start = performance.now();
         function waitBeforeUpdate () {
+            console.log('Setting timeout for S_next collection');
             setTimeout(function () {
                 let end = performance.now();
                 if (end - start >= this_reasoner.NEXT_STATE_TIME) {
-                    console.log('Next state collected. Updating model');
+                    console.log('Timeout; S_next collected. Updating model');
                     this_reasoner.updateModel();
                 } else {
                     waitBeforeUpdate();
@@ -412,6 +402,7 @@ class EasyReadingReasoner {
     }
 
     freeze() {
+        console.log('Freezing reasoner');
         this.is_paused = true;
         // Unfreeze reasoner if paused for too long
         let this_reasoner = this;
@@ -433,6 +424,7 @@ class EasyReadingReasoner {
     }
 
     unfreeze() {
+        console.log('Unfreezing reasoner');
         this.is_paused = false;
         this.cancel_unfreeze = true;
     }

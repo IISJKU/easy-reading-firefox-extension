@@ -136,7 +136,7 @@ let contentScriptController = {
                 try {
                     if ('ui_i' in m && 'tool_i' in m) {
                         let ui = easyReading.userInterfaces[m['ui_i']];
-                        let tool = ui.tools[m['tool_i']];
+                        tool = ui.tools[m['tool_i']];
                         if (tool) {
                             if (tracking_dialog.input !== null) {
                                 tracking_dialog.setTool(m['ui_i'], m['tool_i']);
@@ -153,16 +153,18 @@ let contentScriptController = {
                     console.log('triggerRequest error:' + error);
                 } finally {
                     if (can_trigger) {
+                        let target = document.elementFromPoint(m.x, m.y);
                         tool.widget.activateWidget();
                         globalEventListener.paragraphClickListener({
-                            target: document.elementFromPoint(m.x, m.y),
+                            target: target,
                             clientX: m.x,
                             clientY: m.y,
                             user_triggered: false,
                             reasoner_triggered: reasoner_triggered,
                         });
                     } else {
-                        // TODO
+                        console.log("Cannot trigger requested help. Resetting reasoner");
+                        this.portToBackGroundScript.postMessage({type: "resetReasoner"});
                     }
                     tracking_dialog.reset();
                     confirm_dialog.reset();

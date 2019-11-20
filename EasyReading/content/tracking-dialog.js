@@ -173,7 +173,7 @@ let confirm_dialog = {
             this.ui = ui_index;
             this.tool = tool_index;
         } else {
-            console.log("Confirm dialog assigned a tool no input stored. Skipping dialog.");
+            console.log("Confirm dialog assigned a tool but no input stored. Skipping dialog.");
         }
     },
 
