@@ -262,6 +262,28 @@ class EasyReadingReasoner {
         timeout();
     };
 
+    /**
+     * When a tool is triggered, estimate implicit feedback according to how long it took user to cancel feedback
+     */
+    waitToEstimateFeedback() {
+        let this_reasoner = this;
+        let start = performance.now();
+        this_reasoner.user_action = 'ok';
+        function timeout () {
+            setTimeout(function () {
+                if (this_reasoner.waiting_feedback) {
+                    let end = performance.now();
+                    if (!this_reasoner.is_paused && end - start >= this_reasoner.IDLE_TIME) {
+                        this_reasoner.user_action = 'help';  // User did not cancel help after IDLE_TIME, it was needed
+                    } else {
+                        timeout();
+                    }
+                }
+            }, 500);
+        }
+        timeout();
+    }
+
     setFeedbackAutomatically() {
         switch (this.last_action) {
             case EasyReadingReasoner.A.askUser:  // User remained idle during dialog --> assume OK
@@ -299,6 +321,7 @@ class EasyReadingReasoner {
         if (this.last_action === null) {
             this.resetStatus();
             console.log('Trying to update model without an action. Resetting status.');
+            return;
         }
         let s_next = this.aggregateStates(this.s_next_buffer);
         if (s_next.length === 0) {
@@ -336,12 +359,13 @@ class EasyReadingReasoner {
                     console.log('User canceled own help request');
                     this.setHumanFeedback("help");  // User was who triggered help, keep their feedback
                 } else {
-                    console.log('User canceled automatic help'); // TODO next; this is not called
+                    console.log('User canceled automatic help');
                     this.setHumanFeedback("ok");  // User cancelled automatically triggered help
                 }
             }
             this.updateModel();
         } else {
+            console.log("setHelpCanceledFeedback: last action is null; resetting reasoner.");
             this.resetStatus();
         }
     }
@@ -358,6 +382,7 @@ class EasyReadingReasoner {
                 console.log('Help done but agent not waiting anymore');
             }
         } else {
+            console.log("setHelpDoneFeedback: last action is null; resetting reasoner.");
             this.resetStatus();
         }
     }
@@ -412,7 +437,7 @@ class EasyReadingReasoner {
                 let end = performance.now();
                 if (!this_reasoner.cancel_unfreeze) {
                     if (end - start >= this_reasoner.UNFREEZE_TIME) {
-                        console.log('Agent paused for too long. Unfreezing now.');
+                        console.log('Agent paused for too long. Resetting now.');
                         this_reasoner.resetStatus();
                     } else {
                         selfUnfreeze();

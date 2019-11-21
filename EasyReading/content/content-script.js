@@ -17,6 +17,7 @@ let contentScriptController = {
 
     receiveMessageFromBackgroundScript : function (m) {
         let input = null;
+        let can_trigger = false;
         switch (m.type) {
             case "cloudRequestResult":
 
@@ -106,7 +107,7 @@ let contentScriptController = {
                     console.log("Displaying tracking dialog");
                     tracking_dialog.showDialog(m.posX, m.posY, input);
                 } else {
-                    console.log("No input found. Dialog not shown.");
+                    console.log("No input found. Dialog not shown and resetting reasoner.");
                     tracking_dialog.reset();
                     this.portToBackGroundScript.postMessage({type: "resetReasoner"});
                 }
@@ -116,6 +117,7 @@ let contentScriptController = {
                 let gazeY = m.posY;
                 input = pageUtils.getParagraphUnderPosition(gazeX, gazeY);
                 if (input) {
+                    can_trigger = true;
                     contentScriptController.portToBackGroundScript.postMessage({
                         type: "requestHelpNeeded",
                         posX: gazeX,
@@ -124,13 +126,13 @@ let contentScriptController = {
                         automatic: true,
                     });
                     confirm_dialog.setInput(input);
-                } else {
-                    console.log("No input found. Help could not be triggered.");
-                    this.portToBackGroundScript.postMessage({type: "resetReasoner"});
+                }
+                if (!can_trigger) {
+                    console.log("No input found. Help could not be triggered. Reasoner resetted.");
+                    contentScriptController.portToBackGroundScript.postMessage({type: "resetReasoner"});
                 }
                 break;
             case 'triggerRequest':
-                let can_trigger = false;
                 let reasoner_triggered = false;
                 let tool = null;
                 try {
@@ -140,10 +142,12 @@ let contentScriptController = {
                         if (tool) {
                             if (tracking_dialog.input !== null) {
                                 tracking_dialog.setTool(m['ui_i'], m['tool_i']);
+                                tracking_dialog.waitForPresentation = m['waitForPresentation'];
                                 can_trigger = true;
                             }
                             if (confirm_dialog.input !== null) {
                                 confirm_dialog.setTool(m['ui_i'], m['tool_i']);
+                                confirm_dialog.waitForPresentation = m['waitForPresentation'];
                                 can_trigger = true;
                                 reasoner_triggered = true;
                             }
@@ -154,6 +158,7 @@ let contentScriptController = {
                 } finally {
                     if (can_trigger) {
                         let target = document.elementFromPoint(m.x, m.y);
+                        pageUtils.removeDisplayUnderPosition(m.x, m.y);
                         tool.widget.activateWidget();
                         globalEventListener.paragraphClickListener({
                             target: target,
@@ -167,12 +172,17 @@ let contentScriptController = {
                         this.portToBackGroundScript.postMessage({type: "resetReasoner"});
                     }
                     tracking_dialog.reset();
-                    confirm_dialog.reset();
                 }
                 break;
             case 'triggerHelpFailed':
+            case 'resetDialogs':
+                console.log('resetting dialogs');
                 tracking_dialog.reset();
                 confirm_dialog.reset();
+                break;
+            case 'closeDialogs':
+                tracking_dialog.removeAll();
+                confirm_dialog.removeAll();
                 break;
         }
     },

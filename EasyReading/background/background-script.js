@@ -216,6 +216,7 @@ var background = {
                 background.reasoner.unfreeze();
                 let wait_presentation = !! receivedMessage.waitForPresentation;
                 if (wait_presentation) {
+                    background.reasoner.waitToEstimateFeedback();
                     background.reasoner.startCollectingNextState();
                 } else {
                     background.reasoner.waitForUserReaction();
@@ -271,10 +272,12 @@ var background = {
                         console.log("onMessageFromTracking: No active tab found");
                     }
                     if (system_tab) {
+                        console.log('Reset by onMessageFromTracking');
                         this_reasoner.resetStatus();  // User can't be helped on system tabs
                     }
                 },
                 (error) => {
+                    console.log('onMessageFromTracking error: ' + error);
                     this_reasoner.resetStatus();
                 }
             );
@@ -319,10 +322,12 @@ var background = {
                             console.log("handleReasonerAction: No active tab found");
                         }
                         if (reset_status) {
+                            console.log("Reset by handleReasonerAction");
                             this_reasoner.resetStatus();  // User can't be helped on system tabs
                         }
                     },
                     (error) => {
+                        console.log("handleReasonerAction error: " + error);
                         this_reasoner.resetStatus();
                     }
                 );
@@ -549,6 +554,9 @@ browser.runtime.onConnect.addListener(function (p) {
                     portInfo.startUpComplete = true;
                     console.log(p.sender.tab.id);
                     console.log("startup complete");
+                    if (background.reasoner.active) {
+                        background.reasoner.resetStatus();
+                    }
                     break;
 
                 case "saveUiConfigurationForTab":
@@ -562,6 +570,7 @@ browser.runtime.onConnect.addListener(function (p) {
                 case "requestHelpNeeded":
                     if (m.automatic === false) {
                         background.reasoner.user_action = 'help';
+                        console.log('requestHelpNeeded: setting user action: help');
                     }
                     // Freeze reasoner until response from cloud (triggerRequest or triggerHelpFailed message)
                     background.reasoner.freeze();
@@ -582,22 +591,35 @@ browser.runtime.onConnect.addListener(function (p) {
                 case "toolTriggered":
                     if (background.reasoner.active) {
                         background.reasoner.user_action = 'help';
+                        console.log('toolTriggered: setting user action: help');
                         background.reasoner.freeze();  // Freeze while waiting for response from cloud
+                        currentPort.postMessage({
+                            type: "closeDialogs",
+                        });
                     }
                     break;
                 case "confirmHelp":
+                    console.log('confirmHelp: setting user action: help');
                     background.reasoner.user_action = 'help';
                     background.sendFeedbackToReasoner("help");
                     break;
-                case "requestHelpRejected":
-                case "undoHelp":
+                case "helpRejected":
+                    console.log('helpRejected: setting user action: ok');
                     background.reasoner.user_action = 'ok';
+                    background.sendFeedbackToReasoner("ok");
+                    break;
+                case "requestHelpRejected":
+                    background.reasoner.user_action = 'ok';
+                    console.log('requestHelpRejected: setting user action: ok');
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "helpComplete":
                     if (background.reasoner.active) {
                         background.reasoner.unfreeze();
                         background.reasoner.setHelpDoneFeedback();
+                        currentPort.postMessage({
+                            type: "resetDialogs",
+                        });
                         console.log('Presentation complete; trying to update model.');
                     }
                     break;
@@ -605,13 +627,15 @@ browser.runtime.onConnect.addListener(function (p) {
                     if (background.reasoner.active) {
                         background.reasoner.unfreeze();
                         background.reasoner.setHelpCanceledFeedback();
+                        currentPort.postMessage({
+                            type: "closeDialogs",
+                        });
                         console.log('Presentation cancelled; trying to update model.');
                     }
                     break;
                 case "resetReasoner":
                     if (background.reasoner) {
                         background.reasoner.resetStatus();
-                        console.log('Reset by resetReasoner');
                     }
                     break;
             }

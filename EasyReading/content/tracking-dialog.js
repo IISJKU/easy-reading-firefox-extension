@@ -9,6 +9,8 @@ let tracking_dialog = {
     input: null,
     ui: -1,
     tool: -1,
+    waitForPresentation: false,
+    ignoreOnClosing: false,
 
     init: function () {
         this.loadDialog();
@@ -41,19 +43,21 @@ let tracking_dialog = {
                 )
             ]
         }).on('onClose', function() {
-            if (tracking_obj.help_requested) {
-                console.log('User asked for help');
-                contentScriptController.portToBackGroundScript.postMessage({
-                    type: "requestHelpNeeded",
-                    posX: tracking_obj.pos_x,
-                    posY: tracking_obj.pos_y,
-                    input: JSON.stringify(tracking_obj.input),
-                    automatic: false,
-                });
-            } else {
-                console.log('User rejected help');
-                tracking_obj.reset();
-                contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
+            if (!tracking_obj.ignoreOnClosing) {
+                if (tracking_obj.help_requested) {
+                    console.log('User asked for help');
+                    contentScriptController.portToBackGroundScript.postMessage({
+                        type: "requestHelpNeeded",
+                        posX: tracking_obj.pos_x,
+                        posY: tracking_obj.pos_y,
+                        input: JSON.stringify(tracking_obj.input),
+                        automatic: false,
+                    });
+                } else {
+                    console.log('User rejected help');
+                    tracking_obj.reset();
+                    contentScriptController.portToBackGroundScript.postMessage({type: "requestHelpRejected"});
+                }
             }
         });
         this.help_requested = false;
@@ -67,6 +71,10 @@ let tracking_dialog = {
         this.input = null;
         this.pos_y = -1;
         this.pos_x = -1;
+        this.ui = -1;
+        this.tool = -1;
+        this.waitForPresentation = false;
+        this.ignoreOnClosing = false;
     },
 
     setTool(ui_index, tool_index) {
@@ -88,7 +96,16 @@ let tracking_dialog = {
         } else {
             console.log("Dialog requested but previous dialog not resolved yet. Hiding new dialog.");
         }
-    }
+    },
+
+    removeAll() {
+        if (this.dialog) {
+            this.ignoreOnClosing = true;
+            this.dialog.close();
+            this.reset();
+        }
+    },
+
 };
 
 let confirm_dialog = {
@@ -98,10 +115,12 @@ let confirm_dialog = {
     input: null,
     ui: -1,
     tool: -1,
+    waitForPresentation: false,
     in_progress: false,
+    ignoreOnClosing: false,
 
     init: function () {
-        this.loadDialog();
+
     },
 
     loadDialog() {
@@ -132,18 +151,28 @@ let confirm_dialog = {
                 )
             ]
         }).on('onClose', function() {
-            if (tracking_obj.help_accepted) {
-                console.log('User confirmed help');
-                contentScriptController.portToBackGroundScript.postMessage({
-                    type: "confirmHelp",
-                });
-            } else {
-                console.log('User rejected given help');
-                requestManager.cancelRequest(
-                    easyReading.userInterfaces[tracking_obj.ui].tools[tracking_obj.tool],
-                    true
-                );
-                contentScriptController.portToBackGroundScript.postMessage({type: "undoHelp"});
+            if (!tracking_obj.ignoreOnClosing) {
+                if (tracking_obj.help_accepted) {
+                    console.log('User confirmed help');
+                    if (!tracking_obj.waitForPresentation) {
+                        contentScriptController.portToBackGroundScript.postMessage({
+                            type: "confirmHelp",
+                            wait: tracking_obj.waitForPresentation,
+                        });
+                    }  // Otherwise, feedback is computed implicitly by setHelpCanceledFeedback
+                } else {
+                    console.log('User rejected given help');
+                    let widget = easyReading.userInterfaces[tracking_obj.ui].tools[tracking_obj.tool].widget;
+                    if (!tracking_obj.waitForPresentation) {
+                        contentScriptController.portToBackGroundScript.postMessage({type: "helpRejected"});
+                    }
+                    if (widget) {
+                        widget.deactivateWidget();
+                    } else {
+                        console.log('Confirm Dialog error: widget could not be located');
+                        contentScriptController.portToBackGroundScript.postMessage({type: "resetReasoner"});
+                    }
+                }
             }
             tracking_obj.reset();
         });
@@ -157,7 +186,10 @@ let confirm_dialog = {
         this.input = null;
         this.ui = -1;
         this.tool = -1;
+        this.waitForPresentation = false;
         this.in_progress = false;
+        this.help_accepted = true;
+        this.ignoreOnClosing = false;
     },
 
     setInput(input) {
@@ -178,7 +210,7 @@ let confirm_dialog = {
     },
 
     showDialog() {
-        if (this.in_progress) {
+        if (!this.in_progress) {
             if (this.input) {
                 this.loadDialog();
                 this.dialog.show();
@@ -187,6 +219,14 @@ let confirm_dialog = {
             }
         } else {
             console.log("Confirm dialog requested but previous dialog not resolved yet. Hiding new dialog.");
+        }
+    },
+
+    removeAll() {
+        if (this.dialog) {
+            this.ignoreOnClosing = true;
+            this.dialog.close();
+            this.reset();
         }
     }
 };
