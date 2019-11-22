@@ -216,9 +216,13 @@ var background = {
                 background.reasoner.unfreeze();
                 let wait_presentation = !! receivedMessage.waitForPresentation;
                 if (wait_presentation) {
-                    background.reasoner.waitToEstimateFeedback();
+                    if (receivedMessage.automatic) {
+                        console.log("waiting to estimate feedback... (triggerRequest)");
+                        background.reasoner.waitToEstimateFeedback();
+                    }
                     background.reasoner.startCollectingNextState();
                 } else {
+                    console.log("waiting for user reaction... (triggerRequest)");
                     background.reasoner.waitForUserReaction();
                 }
                 // Forward message to tab content script
@@ -258,9 +262,7 @@ var background = {
                             try {
                                 let message = JSON.parse(json_msg);
                                 let action = this_reasoner.step(message);
-                                if (action) {
-                                    bg.handleReasonerAction(action);
-                                }
+                                bg.handleReasonerAction(action);
                                 system_tab = false;
                             } catch (error) {
                                 if (error instanceof SyntaxError) {
@@ -285,6 +287,9 @@ var background = {
     },
 
     handleReasonerAction(action) {
+        if (!action) {
+            return;
+        }
         let this_reasoner = this.reasoner;
         let pos_x = -1;
         let pos_y = -1;
@@ -301,6 +306,7 @@ var background = {
                         if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
                             let port = portManager.getPort(tab.id);
                             if (port) {
+                                this_reasoner.freeze();  // Freeze while dialog onscreen
                                 if (action === EasyReadingReasoner.A.askUser) {
                                     console.log('Action taken: ask user');
                                     port.p.postMessage(
@@ -457,16 +463,16 @@ var background = {
 };
 
 // Mock tracking session
-let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":379,\"gaze_y\":371}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":379,\"gaze_y\":371}\n";
+let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":439,\"gaze_y\":289}\n";
 
 let allLines = log_example.split(/\r\n|\n/);
 let n_lines = allLines.length;
@@ -555,6 +561,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     console.log(p.sender.tab.id);
                     console.log("startup complete");
                     if (background.reasoner.active) {
+                        console.log("startUpComplete reset");
                         background.reasoner.resetStatus();
                     }
                     break;
@@ -590,25 +597,26 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                     if (background.reasoner.active) {
-                        background.reasoner.user_action = 'help';
-                        console.log('toolTriggered: setting user action: help');
-                        background.reasoner.freeze();  // Freeze while waiting for response from cloud
+                        background.reasoner.handleToolTriggered();
                         currentPort.postMessage({
                             type: "closeDialogs",
                         });
                     }
                     break;
                 case "confirmHelp":
+                    background.reasoner.unfreeze();
                     console.log('confirmHelp: setting user action: help');
                     background.reasoner.user_action = 'help';
                     background.sendFeedbackToReasoner("help");
                     break;
                 case "helpRejected":
                     console.log('helpRejected: setting user action: ok');
+                    background.reasoner.unfreeze();
                     background.reasoner.user_action = 'ok';
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "requestHelpRejected":
+                    background.reasoner.unfreeze();
                     background.reasoner.user_action = 'ok';
                     console.log('requestHelpRejected: setting user action: ok');
                     background.sendFeedbackToReasoner("ok");
@@ -625,12 +633,12 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "helpCancelled":
                     if (background.reasoner.active) {
+                        console.log('Presentation cancelled; trying to update model.');
                         background.reasoner.unfreeze();
                         background.reasoner.setHelpCanceledFeedback();
                         currentPort.postMessage({
                             type: "closeDialogs",
                         });
-                        console.log('Presentation cancelled; trying to update model.');
                     }
                     break;
                 case "resetReasoner":

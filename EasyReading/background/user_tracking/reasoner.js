@@ -42,6 +42,8 @@ class EasyReadingReasoner {
     waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
     feature_names = [];
+    cancel_unfreeze = false;
+    freeze_start = null;
 
     // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
@@ -52,7 +54,6 @@ class EasyReadingReasoner {
     s_next_buffer = [];  // Buffer of states after feedback
     gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
     stored_feedback = null;
-    cancel_unfreeze = false;
 
     // Sub-models
     q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
@@ -354,14 +355,12 @@ class EasyReadingReasoner {
      */
     setHelpCanceledFeedback() {
         if (this.last_action !== null) {
-            if (this.waiting_feedback) {
-                if (this.user_action === "help") {
-                    console.log('User canceled own help request');
-                    this.setHumanFeedback("help");  // User was who triggered help, keep their feedback
-                } else {
-                    console.log('User canceled automatic help');
-                    this.setHumanFeedback("ok");  // User cancelled automatically triggered help
-                }
+            if (this.user_action === "help") {
+                console.log('User canceled own help request');
+                this.setHumanFeedback("help");  // User was who triggered help, keep their feedback
+            } else {
+                console.log('User canceled automatic help');
+                this.setHumanFeedback("ok");  // User cancelled automatically triggered help
             }
             this.updateModel();
         } else {
@@ -375,16 +374,22 @@ class EasyReadingReasoner {
      */
     setHelpDoneFeedback() {
         if (this.last_action !== null) {
-            if (this.waiting_feedback) {
-                this.setHumanFeedback("help");
-                this.updateModel();
-            } else {
-                console.log('Help done but agent not waiting anymore');
-            }
+            this.setHumanFeedback("help");
+            this.updateModel();
         } else {
             console.log("setHelpDoneFeedback: last action is null; resetting reasoner.");
             this.resetStatus();
         }
+    }
+
+    /**
+     * Handles the sudden triggering of a tool by the user
+     */
+    handleToolTriggered() {
+        console.log('toolTriggered: setting user action: help');
+        this.freeze();  // Freeze while waiting for response from cloud
+        this.user_action = 'help';  // User-triggered, so help needed
+        this.waiting_feedback = false;  // Triggering a tool interrupts waiting loop
     }
 
     /**
@@ -429,14 +434,12 @@ class EasyReadingReasoner {
     freeze() {
         console.log('Freezing reasoner');
         this.is_paused = true;
-        // Unfreeze reasoner if paused for too long
         let this_reasoner = this;
-        let start = performance.now();
         function selfUnfreeze () {
             setTimeout(function () {
                 let end = performance.now();
                 if (!this_reasoner.cancel_unfreeze) {
-                    if (end - start >= this_reasoner.UNFREEZE_TIME) {
+                    if (end - this_reasoner.freeze_start >= this_reasoner.UNFREEZE_TIME) {
                         console.log('Agent paused for too long. Resetting now.');
                         this_reasoner.resetStatus();
                     } else {
@@ -445,13 +448,20 @@ class EasyReadingReasoner {
                 }
             }, 500);
         }
-        selfUnfreeze();
+        if (this_reasoner.freeze_start === null) {
+            this_reasoner.freeze_start = performance.now();
+            selfUnfreeze();
+        } else {
+            // Update start time on subsequent calls to freeze(), but do not start new timeout function
+            this_reasoner.freeze_start = performance.now();
+        }
     }
 
     unfreeze() {
         console.log('Unfreezing reasoner');
         this.is_paused = false;
         this.cancel_unfreeze = true;
+        this.freeze_start = null;
     }
 
     updateQModel() {
@@ -542,21 +552,23 @@ class EasyReadingReasoner {
      */
     humanFeedbackToReward(feedback) {
         let reward = 0.0;
-        if (feedback === EasyReadingReasoner.user_S.confused) {
-            if (this.user_status === EasyReadingReasoner.user_S.confused) {
-                reward = 10;
-            } else if (this.user_status === EasyReadingReasoner.user_S.relaxed) {
-                reward = -200.0;
-            } else {
-                reward = -10.0;
-            }
-        } else if (feedback === EasyReadingReasoner.user_S.relaxed) {
-            if (this.user_status === EasyReadingReasoner.user_S.confused) {
-                reward = -20.0;
-            } else if (this.user_status === EasyReadingReasoner.user_S.relaxed) {
-                reward = 1;
-            } else {
-                reward = -10.0;
+        if (this.last_action) {
+            if (feedback === EasyReadingReasoner.user_S.confused) {
+                if (this.last_action === EasyReadingReasoner.A.showHelp) {
+                    reward = 10;
+                } else if (this.last_action === EasyReadingReasoner.A.nop) {
+                    reward = -200.0;
+                } else {
+                    reward = -10.0;
+                }
+            } else if (feedback === EasyReadingReasoner.user_S.relaxed) {
+                if (this.last_action === EasyReadingReasoner.A.showHelp) {
+                    reward = -20.0;
+                } else if (this.last_action === EasyReadingReasoner.A.nop) {
+                    reward = 1;
+                } else {
+                    reward = -10.0;
+                }
             }
         }
         return reward;
