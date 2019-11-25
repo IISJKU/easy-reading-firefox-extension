@@ -331,22 +331,26 @@ class EasyReadingReasoner {
             return;
         }
         this.s_next = tf.tensor1d(preProcessSample(this.feature_names, s_next));
+        this.updateActionFunction();
+        this.last_action = null;
+        this.collect_t = 'before';
+        this.waiting_feedback = false;
+        console.log('Copying S_next to S_current');
+        this.s_buffer = this.s_next_buffer;
+        this.s_next_buffer = [];
+        if (this.t_current >= this.episode_length) {
+            this.episodeEnd();
+        }
+    }
+
+    updateActionFunction() {
         if (this.q_func_a) {
-            console.log('Updating Q model');
+            console.log('Updating Q state-action value function');
             if (this.q_func_b) {
                 this.updateDoubleQModel();
             } else {
                 this.updateQModel();
             }
-        }
-        this.last_action = null;
-        this.collect_t = 'before';
-        this.waiting_feedback = false;
-        console.log('Collecting current state (S)');
-        this.s_buffer = [];
-        this.s_next_buffer = [];
-        if (this.t_current >= this.episode_length) {
-            this.episodeEnd();
         }
     }
 
