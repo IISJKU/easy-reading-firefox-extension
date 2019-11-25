@@ -300,6 +300,7 @@ var background = {
         switch (action) {
             case EasyReadingReasoner.A.askUser:
             case EasyReadingReasoner.A.showHelp:
+            case EasyReadingReasoner.A.nop:
                 let reset_status = true;
                 browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                         let tab = tabs[0];
@@ -314,13 +315,16 @@ var background = {
                                             posX: pos_x,
                                             posY: pos_y,
                                         });
-                                } else {
+                                } else if (action === EasyReadingReasoner.A.showHelp) {
                                     console.log('Action taken: show help');
                                     port.p.postMessage(
                                         {   type: "triggerhelp",
                                             posX: pos_x,
                                             posY: pos_y,
                                         });
+                                } else {
+                                    console.log('Action taken: nop');
+                                    this_reasoner.waitForUserReaction();
                                 }
                                 reset_status = false;
                             }
@@ -337,10 +341,6 @@ var background = {
                         this_reasoner.resetStatus();
                     }
                 );
-                break;
-            case EasyReadingReasoner.A.nop:
-                console.log('Action taken: nop');
-                this_reasoner.waitForUserReaction();
                 break;
         }
     },
