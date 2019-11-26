@@ -307,8 +307,8 @@ var background = {
                         if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
                             let port = portManager.getPort(tab.id);
                             if (port) {
-                                this_reasoner.freeze();  // Freeze while dialog onscreen
                                 if (action === EasyReadingReasoner.A.askUser) {
+                                    this_reasoner.freeze();  // Freeze while dialog onscreen
                                     console.log('Action taken: ask user');
                                     port.p.postMessage(
                                         {   type: "askuser",
@@ -316,6 +316,7 @@ var background = {
                                             posY: pos_y,
                                         });
                                 } else if (action === EasyReadingReasoner.A.showHelp) {
+                                    this_reasoner.freeze();  // Freeze while dialog onscreen
                                     console.log('Action taken: show help');
                                     port.p.postMessage(
                                         {   type: "triggerhelp",
