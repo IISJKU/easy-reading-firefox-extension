@@ -53,13 +53,22 @@ class EasyReadingReasoner {
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
     gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
+    gaze_offsets = [];  // User's gaze offsets for x and y coordinates from screen origin to viewport origin
     stored_feedback = null;
 
     // Sub-models
     q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
     q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
 
-    constructor (step_size=0.01, model_type='perceptron', n_features=3, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
+    constructor (step_size=0.01,
+                 model_type='perceptron',
+                 n_features=3,
+                 x_offset = 0,
+                 y_offset = 0,
+                 gamma=0.1,
+                 eps=0.1,
+                 eps_decay=1,
+                 ucb=0.0) {
         this.alpha = step_size;
         this.gamma = gamma;
         this.eps = eps;
@@ -67,6 +76,7 @@ class EasyReadingReasoner {
         this.ucb = ucb;
         this.model_type = model_type;
         this.t_current = 1;
+        this.gaze_offsets = [x_offset, y_offset];
         this.loadModel(n_features, model_type);
     }
 
@@ -497,7 +507,7 @@ class EasyReadingReasoner {
     }
 
     updateGazeInfo(labels) {
-        this.gaze_info = get_gaze(labels, this.s_buffer);
+        this.gaze_info = get_gaze(labels, this.s_buffer, this.gaze_offsets[0], this.gaze_offsets[1]);
     }
 
     /**

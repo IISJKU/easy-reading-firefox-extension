@@ -90,7 +90,7 @@ var trackingWebSocket = {
     },
     
     isReady: function () {
-        return true;  // TODO: remove after testing
+        return true;  // TODO test: remove after testing
         return this.isConnected;
     }
 

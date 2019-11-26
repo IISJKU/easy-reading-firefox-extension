@@ -129,7 +129,7 @@ var background = {
                 }
 
                 if (!this.reasoner) {
-                    this.reasoner = new EasyReadingReasoner(0.01, 'q_learning', 3, 0.1, 0.2, 0.9);
+                    this.reasoner = new EasyReadingReasoner(0.01, 'q_learning', 3, 0, -70, 0.1, 0.2, 0.9);
                 } else {
                     this.reasoner.active = true;
                 }
@@ -245,7 +245,7 @@ var background = {
 
     onDisconnectFromTracking: async function (error) {
         background.errorMsg = error;
-        // this.reasoner.active = false; // TODO: uncomment when not testing
+        // this.reasoner.active = false; // TODO test: uncomment when not testing
     },
 
     onMessageFromTracking: async function (json_msg) {
@@ -463,8 +463,8 @@ var background = {
 
 };
 
-// Mock tracking session
-let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
+// Mock tracking session // TODO test: remove after testing
+/*let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
     "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
     "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
     "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
@@ -499,7 +499,7 @@ function timeout () {
         timeout();
     },  5000);
 }
-timeout();
+timeout();*/
 
 browser.runtime.onConnect.addListener(function (p) {
     //if (scriptManager.profileReceived) {
