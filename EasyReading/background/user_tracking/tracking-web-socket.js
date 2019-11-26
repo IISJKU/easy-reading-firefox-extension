@@ -41,7 +41,6 @@ var trackingWebSocket = {
         try {
             if ('data' in message && message.data) {
                 background.onMessageFromTracking(message.data);
-                console.log("tracking-ws: message received: " + message);
             }
         } catch (e) {
             console.log("tracking-ws: error on message- " + e);
@@ -90,7 +89,7 @@ var trackingWebSocket = {
     },
     
     isReady: function () {
-        return true;  // TODO test: remove after testing
+        // return true;  // uncomment when testing
         return this.isConnected;
     }
 

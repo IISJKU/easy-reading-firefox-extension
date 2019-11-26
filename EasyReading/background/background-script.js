@@ -245,7 +245,7 @@ var background = {
 
     onDisconnectFromTracking: async function (error) {
         background.errorMsg = error;
-        // this.reasoner.active = false; // TODO test: uncomment when not testing
+        this.reasoner.active = false; // comment when testing
     },
 
     onMessageFromTracking: async function (json_msg) {
@@ -463,17 +463,18 @@ var background = {
 
 };
 
-// Mock tracking session // TODO test: remove after testing
-/*let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gaze_x\":439,\"gaze_y\":289}\n" +
-    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gaze_x\":439,\"gaze_y\":289}\n";
+// Mock tracking session
+// Uncomment block below when testing
+/*let log_example = "{\"timestamp\":\"2019.10.16.11.53.22\",\"fixation_ms\":277.666667,\"blink_ms\":59.000000,\"blink_rate\":1.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.27\",\"fixation_ms\":191.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.33\",\"fixation_ms\":214.454545,\"blink_ms\":44.666667,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.38\",\"fixation_ms\":647.000000,\"blink_ms\":45.000000,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.43\",\"fixation_ms\":428.750000,\"blink_ms\":52.142857,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.48\",\"fixation_ms\":166.181818,\"blink_ms\":66.250000,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.53.58\",\"fixation_ms\":646.692308,\"blink_ms\":37.166667,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.05\",\"fixation_ms\":1272.000000,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.10\",\"fixation_ms\":655.142857,\"blink_ms\":0.000000,\"blink_rate\":0.000000,\"gazeX\":439,\"gazeY\":289}\n" +
+    "{\"timestamp\":\"2019.10.16.11.54.15\",\"fixation_ms\":138.523810,\"blink_ms\":64.142857,\"blink_rate\":1.000000,\"gazeX\":439,\"gazeY\":289}\n";
 
 let allLines = log_example.split(/\r\n|\n/);
 let n_lines = allLines.length;

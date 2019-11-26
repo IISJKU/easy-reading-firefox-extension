@@ -2,7 +2,7 @@
  * Pre-process a given sample so it fits the expected state format
  */
 function preProcessSample(labels, sample) {
-    const f_ignore = ['timestamp', 'label', 'gaze_x', 'gaze_y'];
+    const f_ignore = ['timestamp', 'label', 'gazeX', 'gazeY'];
     let sample_clean = [];
     let n_labels = labels.length;
     let n_features = sample.length;
@@ -37,8 +37,8 @@ function get_gaze(labels, samples, x_offset=0, y_offset=0) {
     let gaze_x = -1;
     let gaze_y = -1;
     let n_labels = labels.length;
-    let x_i = labels.indexOf('gaze_x');
-    let y_i = labels.indexOf('gaze_y');
+    let x_i = labels.indexOf('gazeX');
+    let y_i = labels.indexOf('gazeY');
     let longest_fixation = -1;
     if (x_i > -1 && y_i > -1) {
         if (samples.length === 1) {
@@ -53,7 +53,7 @@ function get_gaze(labels, samples, x_offset=0, y_offset=0) {
                 for (let i=0; i<samples.length; i++) {
                     let s = samples[i];
                     if (s.length === n_labels) {
-                        let fix = s[fix_i];
+                        let fix = Number(s[fix_i]);
                         if (fix > longest_fixation) {
                             gaze_x = s[x_i];
                             gaze_y = s[y_i];
@@ -73,7 +73,7 @@ function get_gaze(labels, samples, x_offset=0, y_offset=0) {
             }
         }
     }
-    return [gaze_x + x_offset, gaze_y + y_offset]
+    return [Number(gaze_x) + x_offset, Number(gaze_y) + y_offset]
 }
 
 /**
