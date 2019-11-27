@@ -108,7 +108,7 @@ class EasyReadingReasoner {
         this.feature_names = [];
         this.gaze_info = [];
         this.stored_feedback = null;
-        this.unfreeze();
+        this.unfreeze(false);
         console.log("Reasoner status reset. Collecting new user state");
     }
 
@@ -158,7 +158,7 @@ class EasyReadingReasoner {
             return EasyReadingReasoner.A.ignore;
         }
         if (this.is_paused) {
-            console.log('Ignore tracking data because reasoner paused.');
+            // console.log('Ignore tracking data because reasoner paused.');
             return EasyReadingReasoner.A.ignore;
         }
         const labels = Object.keys(message);  // Array keys; not sample labels!
@@ -471,8 +471,10 @@ class EasyReadingReasoner {
         }
     }
 
-    unfreeze() {
-        console.log('Unfreezing reasoner');
+    unfreeze(log=true) {
+        if (log) {
+            console.log('Unfreezing reasoner');
+        }
         this.is_paused = false;
         this.cancel_unfreeze = true;
         this.freeze_start = null;
@@ -529,7 +531,6 @@ class EasyReadingReasoner {
             aggregated = buffer[0];
         } else if (n_s > 1) {
             let sample_length = buffer[0].length;
-            console.log('Reasoner: aggregating ' + n_s + ' user states.');
             let combined = [];
             let i_skipped = new Set();
             for (let i=0; i<buffer.length; i++) {

@@ -274,7 +274,6 @@ var background = {
                         console.log("onMessageFromTracking: No active tab found");
                     }
                     if (system_tab) {
-                        console.log('Reset by onMessageFromTracking');
                         this_reasoner.resetStatus();  // User can't be helped on system tabs
                     }
                 },
@@ -333,7 +332,6 @@ var background = {
                             console.log("handleReasonerAction: No active tab found");
                         }
                         if (reset_status) {
-                            console.log("Reset by handleReasonerAction");
                             this_reasoner.resetStatus();  // User can't be helped on system tabs
                         }
                     },

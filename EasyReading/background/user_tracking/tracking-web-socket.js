@@ -64,7 +64,6 @@ var trackingWebSocket = {
 
     sendMessage: function (message) {
         if (this.webSocket) {
-            console.log("tracking-ws: send message-sent");
             this.webSocket.send(message);
         }
     },

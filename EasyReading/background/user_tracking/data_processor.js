@@ -34,8 +34,8 @@ function preProcessSample(labels, sample) {
  * Get representative gaze position for the given samples
  */
 function get_gaze(labels, samples, x_offset=0, y_offset=0) {
-    let gaze_x = -1;
-    let gaze_y = -1;
+    let gaze_x = 0;
+    let gaze_y = 0;
     let n_labels = labels.length;
     let x_i = labels.indexOf('gazeX');
     let y_i = labels.indexOf('gazeY');
@@ -73,7 +73,7 @@ function get_gaze(labels, samples, x_offset=0, y_offset=0) {
             }
         }
     }
-    return [Number(gaze_x) + x_offset, Number(gaze_y) + y_offset]
+    return [Number(gaze_x) + x_offset, Number(gaze_y) + y_offset];
 }
 
 /**
