@@ -319,7 +319,7 @@ class EasyReadingReasoner {
         if (feedback === "help") {
             user_status = EasyReadingReasoner.user_S.confused;
         }
-        this.reward = this.humanFeedbackToReward(user_status);
+        this.reward = this.humanFeedbackToReward(this.last_action, user_status);
         console.log("Got feedback " + feedback + ". Setting reward to " + this.reward);
         this.user_status = user_status;
     }
@@ -341,7 +341,10 @@ class EasyReadingReasoner {
             return;
         }
         this.s_next = tf.tensor1d(preProcessSample(this.feature_names, s_next));
-        this.updateActionFunction();
+        this.updateActionFunction(this.last_action, this.reward);
+        if (this.last_action === EasyReadingReasoner.A.showHelp) {
+            this.updateUntakenActionFunction();
+        }
         this.last_action = null;
         this.collect_t = 'before';
         this.waiting_feedback = false;
@@ -353,13 +356,31 @@ class EasyReadingReasoner {
         }
     }
 
-    updateActionFunction() {
+    /**
+     * Update the state-action value function for an action taken by the user tha was guessed incorrectly
+     * by the reasoner. This should speed up the convergence of the state-action value function towards
+     * the optimal one.
+     */
+    updateUntakenActionFunction() {
+        if (this.user_action) {
+            // Compute reward as if reasoner had taken the right action
+            let feedback = EasyReadingReasoner.user_S.relaxed;
+            if (this.user_action === EasyReadingReasoner.A.showHelp) {
+                feedback = EasyReadingReasoner.user_S.confused;
+            }
+            let reward = this.humanFeedbackToReward(this.user_action, feedback);
+            // Incorporate additional knowledge about best action to the model
+            this.updateActionFunction(this.user_action, reward);
+        }
+    }
+
+    updateActionFunction(action, reward) {
         if (this.q_func_a) {
             console.log('Updating Q state-action value function');
             if (this.q_func_b) {
-                this.updateDoubleQModel();
+                this.updateDoubleQModel(action, reward);
             } else {
-                this.updateQModel();
+                this.updateQModel(action, reward);
             }
         }
     }
@@ -480,13 +501,13 @@ class EasyReadingReasoner {
         this.freeze_start = null;
     }
 
-    updateQModel() {
-        let q_target = this.reward + this.gamma * this.q_func_a.retrieveGreedy(this.s_next, this.t_current);
-        let new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, this.last_action));
-        this.q_func_a.update(this.s_curr, this.last_action, new_q_value);
+    updateQModel(action, reward) {
+        let q_target = reward + this.gamma * this.q_func_a.retrieveGreedy(this.s_next, this.t_current);
+        let new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, action));
+        this.q_func_a.update(this.s_curr, action, new_q_value);
     }
 
-    updateDoubleQModel() {
+    updateDoubleQModel(action, reward) {
         let to_update = 'a';
         if (Math.random() < 0.5) {
             to_update = 'b';
@@ -494,17 +515,17 @@ class EasyReadingReasoner {
         let q_target = 0.0;
         let new_q_value = 0.0;
         if (to_update === 'a') {
-            q_target = this.reward +
+            q_target = reward +
                 this.gamma * this.q_func_b.retrieve(this.s_next,
                     this.q_func_a.greedyAction(this.s_next, this.t_current));
-            new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, this.last_action));
-            this.q_func_a.update(this.s_curr, this.last_action, new_q_value);
+            new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, action));
+            this.q_func_a.update(this.s_curr, action, new_q_value);
         } else {
-            q_target = this.reward +
+            q_target = reward +
                 this.gamma * this.q_func_a.retrieve(this.s_next,
                     this.q_func_b.greedyAction(this.s_next, this.t_current));
-            new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, this.last_action));
-            this.q_func_b.update(this.s_curr, this.last_action, new_q_value);
+            new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, action));
+            this.q_func_b.update(this.s_curr, action, new_q_value);
         }
     }
 
@@ -562,25 +583,26 @@ class EasyReadingReasoner {
 
     /**
      * Compare human-given feedback with current estimation of user mood and return a corresponding numeric reward
+     * @param action: action taken (one of EasyReadingReasoner.A)
      * @param feedback: User mood as selected by the user (confused/relaxed)
      * @returns {number}: A numeric reward signal, the higher the better. Especially rewards detecting confusion.
      */
-    humanFeedbackToReward(feedback) {
+    humanFeedbackToReward(action, feedback) {
         let reward = 0.0;
-        if (this.last_action) {
+        if (action) {
             if (feedback === EasyReadingReasoner.user_S.confused) {
-                if (this.last_action === EasyReadingReasoner.A.showHelp) {
+                if (action === EasyReadingReasoner.A.showHelp) {
                     reward = 10;
-                } else if (this.last_action === EasyReadingReasoner.A.nop) {
+                } else if (action === EasyReadingReasoner.A.nop) {
                     reward = -200.0;
                 } else {
                     reward = -10.0;
                 }
             } else if (feedback === EasyReadingReasoner.user_S.relaxed) {
-                if (this.last_action === EasyReadingReasoner.A.showHelp) {
+                if (action === EasyReadingReasoner.A.showHelp) {
                     reward = -20.0;
-                } else if (this.last_action === EasyReadingReasoner.A.nop) {
-                    reward = 1;
+                } else if (action === EasyReadingReasoner.A.nop) {
+                    reward = 0.0;
                 } else {
                     reward = -10.0;
                 }
