@@ -342,7 +342,7 @@ class EasyReadingReasoner {
         }
         this.s_next = tf.tensor1d(preProcessSample(this.feature_names, s_next));
         this.updateActionFunction(this.last_action, this.reward);
-        if (this.last_action === EasyReadingReasoner.A.showHelp) {
+        if (this.last_action === EasyReadingReasoner.A.askUser) {
             this.updateUntakenActionFunction();
         }
         this.last_action = null;
@@ -365,12 +365,14 @@ class EasyReadingReasoner {
         if (this.user_action) {
             // Compute reward as if reasoner had taken the right action
             let feedback = EasyReadingReasoner.user_S.relaxed;
-            if (this.user_action === EasyReadingReasoner.A.showHelp) {
+            let action = EasyReadingReasoner.A.nop;
+            if (this.user_action === "help") {
                 feedback = EasyReadingReasoner.user_S.confused;
+                action = EasyReadingReasoner.A.showHelp;
             }
-            let reward = this.humanFeedbackToReward(this.user_action, feedback);
+            let reward = this.humanFeedbackToReward(action, feedback);
             // Incorporate additional knowledge about best action to the model
-            this.updateActionFunction(this.user_action, reward);
+            this.updateActionFunction(action, reward);
         }
     }
 
