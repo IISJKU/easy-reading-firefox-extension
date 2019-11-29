@@ -2,24 +2,29 @@ class ActionValueFunction {
     q = {};
     actions = [];
     n_actions = 0;
-    preferred_action_i = -1; // Index of preferred action to take when in doubt, negative for none
+    preferred_actions = [];
     count_actions = {};  // Counter of actions taken
     ucb_c = 0.0;  // UCB degree of exploration
 
-    constructor(actions, preferred_a = '', ignore_a='', ucb_c=0.0) {
+    /**
+     * ActionValueFunction constructor
+     * @param actions: list<string>; agent actions
+     * @param preferred_a: list<string>; sorted list of actions. Lower indexed actions have higher preference in ties.
+     * @param ignore_a: list<string>; list of actions that will never be output.
+     * @param ucb_c: float; UCB degree of exploration
+     */
+    constructor(actions, preferred_a=[], ignore_a=[], ucb_c=0.0) {
+        console.log(actions);
         if (actions && actions.length > 0) {
             this.actions = [];
-            this.n_actions = actions.length;
-            for (let i=0; i<this.n_actions; i++) {
-                let a = actions[i];
-                this.count_actions[a] = 0;
-                if (a === preferred_a) {
-                    this.preferred_action_i = i;
-                }
-                if (a !== ignore_a) {
-                    this.actions.push(a);
+            for (let i=0; i<actions.length; i++) {
+                if (ignore_a.indexOf(actions[i]) < 0) {
+                    this.actions.push(actions[i]);
+                    this.count_actions[actions[i]] = 0;
                 }
             }
+            this.n_actions = this.actions.length;
+            this.preferred_actions = preferred_a;
             this.ucb_c = ucb_c;
         }
     }
@@ -51,7 +56,7 @@ class ActionValueFunction {
             if (state_data in this.q) {
                 let tied_actions = [];
                 let v = Number.NEGATIVE_INFINITY;
-                for (let a in this.actions) {
+                for (let a = 0; a < this.actions.length; a++) {
                     let action = this.actions[a];
                     let g = this.retrieve(state_data, action);
                     if (q_b) {
@@ -68,11 +73,20 @@ class ActionValueFunction {
                     }
                 }
                 let chosen_a = null;
-                if (this.preferred_action_i > 0) {
-                    chosen_a = this.actions[this.preferred_action_i];
-                }
-                if (chosen_a === null || tied_actions.indexOf(chosen_a) === -1) {
-                    chosen_a = tied_actions[Math.floor(Math.random() * tied_actions.length)];  // Random tie break
+                if (tied_actions.length === 1) {
+                    chosen_a = tied_actions[0];
+                } else {
+                    for (let i = 0; i < this.preferred_actions.length; i++) {
+                        let p_a = this.preferred_actions[i];
+                        if (tied_actions.indexOf(p_a) > -1) {
+                            chosen_a = p_a;
+                            break;
+                        }
+                    }
+                    if (chosen_a === null) {
+                        // Random tie break
+                        chosen_a = tied_actions[Math.floor(Math.random() * tied_actions.length)];
+                    }
                 }
                 this.count_actions[chosen_a]++;
                 return chosen_a;
@@ -167,8 +181,8 @@ class ActionValueFunction {
 
     getRandomAction() {
         let a = null;
-        if (this.preferred_action_i > -1) {
-            a = this.actions[this.preferred_action_i];
+        if (this.preferred_actions.length) {
+            a = this.preferred_actions[0];
         } else {
             a =  this.actions[this.getRandomActionIndex()];
         }

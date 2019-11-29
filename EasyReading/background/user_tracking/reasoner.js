@@ -121,13 +121,13 @@ class EasyReadingReasoner {
             this.model = null;
             this.w = null;
             this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                EasyReadingReasoner.A.askUser,  // Preferred action in ties
-                EasyReadingReasoner.A.ignore,  // Never return this action, used for faulty messages
+                [EasyReadingReasoner.A.askUser],  // Preferred action in ties
+                [EasyReadingReasoner.A.ignore],  // Never return this action, used for faulty messages
                 this.ucb);
             if (m_type.startsWith('double_q_l')) {
                 this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                    EasyReadingReasoner.A.askUser,
-                    EasyReadingReasoner.A.ignore,
+                    [EasyReadingReasoner.A.askUser],
+                    [EasyReadingReasoner.A.ignore],
                     this.ucb);
             }
             console.log('Q function initialized');
