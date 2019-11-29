@@ -45,12 +45,16 @@ var silentLogin = {
                 let optionsPage = background.getActiveOptionsPage();
 
                 if(optionsPage){
+                    console.log("silent login:");
+                    console.log(silentLogin.getLoginURL());
+
                     optionsPage.silentLoginFailed(silentLogin.getLoginURL());
                 }
             }
 
         }else{
-            console.log("ERROR");
+            console.log("ERROR-Login");
+            console.log(e);
         }
     },
 
