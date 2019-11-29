@@ -597,7 +597,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     break;
                 case "toolTriggered":
                     if (background.reasoner.active) {
-                        background.reasoner.handleToolTriggered();
+                        background.reasoner.handleToolTriggered(m.wait);
                         currentPort.postMessage({
                             type: "closeDialogs",
                         });

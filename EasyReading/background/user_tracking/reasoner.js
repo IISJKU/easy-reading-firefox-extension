@@ -33,12 +33,13 @@ class EasyReadingReasoner {
 
     // Internal parameters
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
-    reward = 0;  // Reward obtained in current timestep
+    reward = null;  // Reward obtained in current timestep
     s_curr = null;  // Current state (tensor)
     s_next = null;  // Next state (tensor)
     last_action = null;  // Last action taken
     user_action = null;  // Action actually taken by user
     t_current = 1;  // Current timestep
+    waiting_start = null;
     waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
     collect_t = "before";  // Whether status being received refers to before or after feedback obtained
     feature_names = [];
@@ -100,7 +101,7 @@ class EasyReadingReasoner {
     resetStatus() {
         this.waiting_feedback = false;
         this.collect_t = "before";
-        this.reward = 0;
+        this.reward = null;
         this.last_action = null;
         this.user_action = null;
         this.s_buffer = [];
@@ -109,6 +110,7 @@ class EasyReadingReasoner {
         this.gaze_info = [];
         this.stored_feedback = null;
         this.unfreeze(false);
+        this.waiting_start = null;
         // If there are any dialogs still open anywhere, close them
         for (let i=0; i<portManager.ports.length; i++) {
             portManager.ports[i].p.postMessage({
@@ -127,12 +129,12 @@ class EasyReadingReasoner {
             this.model = null;
             this.w = null;
             this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                [EasyReadingReasoner.A.askUser],  // Preferred action in ties
+                [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],  // Preferred actions in ties
                 [EasyReadingReasoner.A.ignore],  // Never return this action, used for faulty messages
                 this.ucb);
             if (m_type.startsWith('double_q_l')) {
                 this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                    [EasyReadingReasoner.A.askUser],
+                    [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],
                     [EasyReadingReasoner.A.ignore],
                     this.ucb);
             }
@@ -259,13 +261,12 @@ class EasyReadingReasoner {
     waitForUserReaction() {
         this.startCollectingNextState();
         console.log("Collecting next state (waiting for user's reaction)");
-        let start = performance.now();
         let this_reasoner = this;
         function timeout () {
             setTimeout(function () {
                 if (this_reasoner.waiting_feedback) {
                     let end = performance.now();
-                    if (!this_reasoner.is_paused && end - start >= this_reasoner.IDLE_TIME) {
+                    if (!this_reasoner.is_paused && end - this_reasoner.waiting_start >= this_reasoner.IDLE_TIME) {
                         console.log("Reasoner: user idle. Assuming prediction was correct or user OK.");
                         this_reasoner.setFeedbackAutomatically();
                     } else {
@@ -275,8 +276,13 @@ class EasyReadingReasoner {
                 }
             }, 500);
         }
-
-        timeout();
+        if (this.waiting_start === null) {
+            this.waiting_start = performance.now();
+            timeout();
+        } else {
+            // Update start time on subsequent calls but do not start new timeout function
+            this.waiting_start = performance.now();
+        }
     };
 
     /**
@@ -302,17 +308,25 @@ class EasyReadingReasoner {
     }
 
     setFeedbackAutomatically() {
-        switch (this.last_action) {
-            case EasyReadingReasoner.A.askUser:  // User remained idle during dialog --> assume OK
-            case EasyReadingReasoner.A.nop:
-                this.setHumanFeedback("ok");
-                this.updateModel();
-                break;
-            case EasyReadingReasoner.A.showHelp:
-                this.setHumanFeedback("help");
-                this.updateModel();
-                break;
+        if (this.user_action) {  // Known action: Update immediately
+            this.updateModel();
+            if (this.reward === null) {
+                this.setHumanFeedback(this.user_action);
+            }
+        } else {  // Unknown action: infer from last taken action
+            switch (this.last_action) {
+                case EasyReadingReasoner.A.askUser:  // User remained idle during dialog --> assume OK
+                case EasyReadingReasoner.A.nop:
+                    this.setHumanFeedback("ok");
+                    this.updateModel();
+                    break;
+                case EasyReadingReasoner.A.showHelp:
+                    this.setHumanFeedback("help");
+                    this.updateModel();
+                    break;
+            }
         }
+
     }
 
     /**
@@ -340,6 +354,11 @@ class EasyReadingReasoner {
             console.log('Trying to update model without an action. Resetting status.');
             return;
         }
+        if (this.reward === null) {
+            this.resetStatus();
+            console.log('Trying to update model without a reward. Resetting status.');
+            return;
+        }
         let s_next = this.aggregateStates(this.s_next_buffer);
         if (s_next.length === 0) {
             console.log('Trying to update model without having collected S_next. Collecting S_next now.');
@@ -351,9 +370,12 @@ class EasyReadingReasoner {
         if (this.last_action === EasyReadingReasoner.A.askUser) {
             this.updateUntakenActionFunction();
         }
+        this.reward = null;
         this.last_action = null;
+        this.user_action = null;
         this.collect_t = 'before';
         this.waiting_feedback = false;
+        this.waiting_start = null;
         console.log('Copying S_next to S_current');
         this.s_buffer = this.s_next_buffer;
         this.s_next_buffer = [];
@@ -428,11 +450,16 @@ class EasyReadingReasoner {
     /**
      * Handles the sudden triggering of a tool by the user
      */
-    handleToolTriggered() {
+    handleToolTriggered(waitForPresentation) {
         console.log('toolTriggered: setting user action: help');
-        this.freeze();  // Freeze while waiting for response from cloud
         this.user_action = 'help';  // User-triggered, so help needed
-        this.waiting_feedback = false;  // Triggering a tool interrupts waiting loop
+        if (waitForPresentation) {
+            this.startCollectingNextState();
+            this.waiting_feedback = false;  // Get feedback form presentation completed/cancelled
+        } else {
+            console.log("waiting for user reaction... (toolTriggered)");
+            this.waitForUserReaction();
+        }
     }
 
     /**
@@ -512,6 +539,9 @@ class EasyReadingReasoner {
             this.cancel_unfreeze = true;
         }
         this.freeze_start = null;
+        if (this.waiting_start !== null) {
+            this.waiting_start = performance.now();
+        }
     }
 
     updateQModel(action, reward) {
