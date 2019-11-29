@@ -48,7 +48,7 @@ class EasyReadingReasoner {
     // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
-    UNFREEZE_TIME = 120000;  // Time to automatically unfreeze paused reasoner (2 minutes)
+    UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
     BUFFER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
@@ -109,6 +109,12 @@ class EasyReadingReasoner {
         this.gaze_info = [];
         this.stored_feedback = null;
         this.unfreeze(false);
+        // If there are any dialogs still open anywhere, close them
+        for (let i=0; i<portManager.ports.length; i++) {
+            portManager.ports[i].p.postMessage({
+                type: "closeDialogs",
+            });
+        }
         console.log("Reasoner status reset. Collecting new user state");
     }
 
@@ -479,9 +485,12 @@ class EasyReadingReasoner {
                     if (end - this_reasoner.freeze_start >= this_reasoner.UNFREEZE_TIME) {
                         console.log('Agent paused for too long. Resetting now.');
                         this_reasoner.resetStatus();
+                        this_reasoner.cancel_unfreeze = false;
                     } else {
                         selfUnfreeze();
                     }
+                } else {
+                    this_reasoner.cancel_unfreeze = false;
                 }
             }, 500);
         }
@@ -499,7 +508,9 @@ class EasyReadingReasoner {
             console.log('Unfreezing reasoner');
         }
         this.is_paused = false;
-        this.cancel_unfreeze = true;
+        if (this.freeze_start !== null) {
+            this.cancel_unfreeze = true;
+        }
         this.freeze_start = null;
     }
 
