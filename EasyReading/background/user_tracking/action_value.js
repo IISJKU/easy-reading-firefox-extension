@@ -51,6 +51,7 @@ class ActionValueFunction {
      * @returns string; Action yielding the best expected future return starting from S
      */
     greedyCombinedAction(state, q_b, t) {
+        let chosen_a = null;
         if (state) {
             let state_data = this.getStateRepresentation(state);
             if (state_data in this.q) {
@@ -72,10 +73,9 @@ class ActionValueFunction {
                         tied_actions.push(action);
                     }
                 }
-                let chosen_a = null;
                 if (tied_actions.length === 1) {
                     chosen_a = tied_actions[0];
-                } else {
+                } else if (tied_actions.length > 1) {
                     for (let i = 0; i < this.preferred_actions.length; i++) {
                         let p_a = this.preferred_actions[i];
                         if (tied_actions.indexOf(p_a) > -1) {
@@ -88,11 +88,13 @@ class ActionValueFunction {
                         chosen_a = tied_actions[Math.floor(Math.random() * tied_actions.length)];
                     }
                 }
-                this.count_actions[chosen_a]++;
-                return chosen_a;
             }
         }
-        return this.getRandomAction();
+        if (chosen_a === null) {
+            chosen_a = this.getRandomAction();
+        }
+        this.count_actions[chosen_a]++;
+        return chosen_a;
     }
 
     /**
