@@ -309,10 +309,10 @@ class EasyReadingReasoner {
 
     setFeedbackAutomatically() {
         if (this.user_action) {  // Known action: Update immediately
-            this.updateModel();
             if (this.reward === null) {
                 this.setHumanFeedback(this.user_action);
             }
+            this.updateModel();
         } else {  // Unknown action: infer from last taken action
             switch (this.last_action) {
                 case EasyReadingReasoner.A.askUser:  // User remained idle during dialog --> assume OK
