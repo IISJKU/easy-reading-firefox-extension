@@ -99,6 +99,15 @@ let contentScriptController = {
                 this.scriptManager = m.data;
 
             }
+            case "recommendation": {
+                if (typeof easyReading !== 'undefined') {
+                    console.log(m.data);
+                    recommendationDialog.showDialogForRecommendation(m.data);
+                }
+
+
+
+            }
 
         }
     },

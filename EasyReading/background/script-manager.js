@@ -60,6 +60,19 @@ var scriptManager = {
             }
         }
 
+        //static css
+        if(profile.staticCSS){
+            for(let i = 0; i < profile.staticCSS.length; i++){
+                if(scriptManager.debugMode){
+                    scriptManager.remoteCSS.push(profile.staticCSS[i]);
+
+                }else{
+                    scriptManager.contentCSS.push(scriptManager.createContentCSSEntry("static_"+i,profile.staticCSS[i]));
+                }
+            }
+        }
+
+
         //Load script for plugins
         if ('plugins' in profile) {
             profile.plugins.forEach((plugin) => {
