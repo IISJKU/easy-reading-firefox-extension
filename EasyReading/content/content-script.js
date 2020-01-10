@@ -270,9 +270,6 @@ let util ={
     }
 };
 
-/*$(document).ready(function() {
-    tracking_dialog.show();
-});*/
 
 contentScriptController.init();
 

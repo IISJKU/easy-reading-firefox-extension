@@ -1,17 +1,20 @@
+/**
+ * Reasoner base class
+ * @Class EasyReadingReasoner
+ */
 class EasyReadingReasoner {
 
-    // Model hyperparameters
+    // Model hyper-parameters
     model_type = 'none';
     is_active = true;
     is_paused = false;
     testing = true;
     model = null;
-    alpha = 0.01; // Step size
-    gamma = 0.1; // Discount factor
+    alpha = 0.01;  // Step size
+    gamma = 0.1;  // Discount factor
     eps = 0.1;  // Epsilon for e-greedy policies
-    eps_decay = 1;  // Epsilon decay factor (applied on each timestep)
-    episode_length = 20;  // Timesteps before ending episode
-    ucb = 0; // Upper-Confidence-Bound Action Selection constant
+    eps_decay = 1;  // Epsilon decay factor (applied on each time step)
+    episode_length = 20;  // Time steps before ending episode
 
     set active(active) {
         if (this.testing) {
@@ -57,30 +60,6 @@ class EasyReadingReasoner {
     gaze_offsets = [];  // User's gaze offsets for x and y coordinates from screen origin to viewport origin
     stored_feedback = null;
 
-    // Sub-models
-    q_func_a = null;  // Action value function A for Q-learning: (n_states x n_features) tensor
-    q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
-
-    constructor (step_size=0.01,
-                 model_type='perceptron',
-                 n_features=3,
-                 x_offset = 0,
-                 y_offset = 0,
-                 gamma=0.1,
-                 eps=0.1,
-                 eps_decay=1,
-                 ucb=0.0) {
-        this.alpha = step_size;
-        this.gamma = gamma;
-        this.eps = eps;
-        this.eps_decay = eps_decay;
-        this.ucb = ucb;
-        this.model_type = model_type;
-        this.t_current = 1;
-        this.gaze_offsets = [x_offset, y_offset];
-        this.loadModel(n_features, model_type);
-    }
-
     /**
      * Action set
      */
@@ -93,6 +72,28 @@ class EasyReadingReasoner {
      */
     static get user_S() {
         return {'relaxed': 'relaxed', 'confused': 'confused', 'unsure': 'unsure'};
+    }
+
+    constructor (step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1) {
+        this.alpha = step_size;
+        this.gamma = gamma;
+        this.eps = eps;
+        this.eps_decay = eps_decay;
+        this.t_current = 1;
+        this.gaze_offsets = [x_offset, y_offset];
+    }
+
+    load(hyperparams) {
+        // Copy hyper-parameters to this reasoner
+        Object.keys(hyperparams).forEach(function(key) {
+            if (this.hasOwnProperty(key)) {
+                this[key] = hyperparams[key];
+            }
+        });
+        if ('x_offset' in hyperparams && 'y_offset' in hyperparams) {
+            this.gaze_offsets = [hyperparams.x_offset, hyperparams.y_offset];
+        }
+        this.model = null;
     }
 
     /**
@@ -120,40 +121,6 @@ class EasyReadingReasoner {
         console.log("Reasoner status reset. Collecting new user state");
     }
 
-    loadModel(n_features, m_type='perceptron') {
-        this.resetStatus();
-        console.log('Reset by loadModel');
-        if (m_type === 'sequential') {
-            this.loadSequentialModel(n_features);
-        } else if (m_type.startsWith('q_learning') || m_type.startsWith('double_q_l')) {
-            this.model = null;
-            this.w = null;
-            this.q_func_a = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],  // Preferred actions in ties
-                [EasyReadingReasoner.A.ignore],  // Never return this action, used for faulty messages
-                this.ucb);
-            if (m_type.startsWith('double_q_l')) {
-                this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
-                    [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],
-                    [EasyReadingReasoner.A.ignore],
-                    this.ucb);
-            }
-            console.log('Q function initialized');
-        } else {
-            this.model = null;
-            this.w = null;  // Simple perceptron; no initialization needed
-        }
-    }
-
-    loadSequentialModel(n_features) {
-        this.model = tf.sequential();
-        this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [n_features]}));
-        this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [n_features]}));
-        this.model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
-        this.model.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
-        console.log('Model Loaded: ' + this.model);
-    }
-
     /**
      * Take an step given the current state and model
      * @param message An object (a single observation from tracking data) with feature labels as keys and feature
@@ -176,9 +143,6 @@ class EasyReadingReasoner {
         }
         let action = null;
         this.feature_names = labels;  // Precondition: all messages carry same labels
-        if (!this.w && !this.model && !this.q_func_a) {
-            this.w = tf.zeros([1, labels.length], 'float32');
-        }
         // Push sample to corresponding buffer
         if (this.collect_t === 'before') {
             let n = this.s_buffer.push(features);
@@ -211,16 +175,7 @@ class EasyReadingReasoner {
         this.t_current++;
         if (state) {
             this.s_curr = tf.tensor1d(state);
-            if (this.q_func_a && this.q_func_b) {
-                action = this.q_func_a.epsGreedyCombinedAction(state, this.eps, this.q_func_b, this.t_current);
-            } else if (this.q_func_a) {
-                action = this.q_func_a.epsGreedyAction(state, this.eps, this.t_current);
-            } else if (this.model) {
-                action = this.model.predict(this.s_curr);
-            }
-        }
-        if (!action) {
-            action = this.randomAction();
+            action = this.bestAction();
         }
         // Update current guess of user's mood
         switch (action) {
@@ -238,21 +193,8 @@ class EasyReadingReasoner {
         return action;
     }
 
-    /**
-     * Return a random action regardless of state; Asking user feedback has highest priority
-     * @returns {string}
-     */
-    randomAction() {
-        let action = EasyReadingReasoner.A.askUser;
-        let rand = Math.random();
-        if (rand > 0.5) {
-            if (rand < 0.75) {
-                action = EasyReadingReasoner.A.nop;
-            } else {
-                action = EasyReadingReasoner.A.showHelp;
-            }
-        }
-        return action
+    bestAction() {
+        return EasyReadingReasoner.randomAction();
     }
 
     /**
@@ -326,7 +268,6 @@ class EasyReadingReasoner {
                     break;
             }
         }
-
     }
 
     /**
@@ -343,6 +284,7 @@ class EasyReadingReasoner {
         console.log("Got feedback " + feedback + ". Setting reward to " + this.reward);
         this.user_status = user_status;
     }
+
 
     /**
      * Update model according to current state (S), reward (R), and next state (S_next).
@@ -366,9 +308,9 @@ class EasyReadingReasoner {
             return;
         }
         this.s_next = tf.tensor1d(preProcessSample(this.feature_names, s_next));
-        this.updateActionFunction(this.last_action, this.reward);
+        this.updateStep(this.last_action, this.reward);
         if (this.last_action === EasyReadingReasoner.A.askUser) {
-            this.updateUntakenActionFunction();
+            this.updateUntakenActionModel();
         }
         this.reward = null;
         this.last_action = null;
@@ -384,12 +326,15 @@ class EasyReadingReasoner {
         }
     }
 
+    updateStep(action, reward) {
+        // Empty (update step performed by overridden subclass method)
+    }
+
     /**
-     * Update the state-action value function for an action taken by the user tha was guessed incorrectly
-     * by the reasoner. This should speed up the convergence of the state-action value function towards
-     * the optimal one.
+     * Update the model for an action taken by the user that was guessed incorrectly by the reasoner.
+     * This should speed up the convergence of the state-action value function towards the optimal one.
      */
-    updateUntakenActionFunction() {
+    updateUntakenActionModel() {
         if (this.user_action) {
             // Compute reward as if reasoner had taken the right action
             let feedback = EasyReadingReasoner.user_S.relaxed;
@@ -400,18 +345,7 @@ class EasyReadingReasoner {
             }
             let reward = this.humanFeedbackToReward(action, feedback);
             // Incorporate additional knowledge about best action to the model
-            this.updateActionFunction(action, reward);
-        }
-    }
-
-    updateActionFunction(action, reward) {
-        if (this.q_func_a) {
-            console.log('Updating Q state-action value function');
-            if (this.q_func_b) {
-                this.updateDoubleQModel(action, reward);
-            } else {
-                this.updateQModel(action, reward);
-            }
+            this.updateStep(action, reward);
         }
     }
 
@@ -544,34 +478,6 @@ class EasyReadingReasoner {
         }
     }
 
-    updateQModel(action, reward) {
-        let q_target = reward + this.gamma * this.q_func_a.retrieveGreedy(this.s_next, this.t_current);
-        let new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, action));
-        this.q_func_a.update(this.s_curr, action, new_q_value);
-    }
-
-    updateDoubleQModel(action, reward) {
-        let to_update = 'a';
-        if (Math.random() < 0.5) {
-            to_update = 'b';
-        }
-        let q_target = 0.0;
-        let new_q_value = 0.0;
-        if (to_update === 'a') {
-            q_target = reward +
-                this.gamma * this.q_func_b.retrieve(this.s_next,
-                    this.q_func_a.greedyAction(this.s_next, this.t_current));
-            new_q_value = this.alpha * (q_target - this.q_func_a.retrieve(this.s_curr, action));
-            this.q_func_a.update(this.s_curr, action, new_q_value);
-        } else {
-            q_target = reward +
-                this.gamma * this.q_func_a.retrieve(this.s_next,
-                    this.q_func_b.greedyAction(this.s_next, this.t_current));
-            new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, action));
-            this.q_func_b.update(this.s_curr, action, new_q_value);
-        }
-    }
-
     updateGazeInfo(labels) {
         this.gaze_info = get_gaze(labels, this.s_buffer, this.gaze_offsets[0], this.gaze_offsets[1]);
     }
@@ -663,6 +569,153 @@ class EasyReadingReasoner {
             }
         }
         return ignore;
+    }
+
+    /**
+     * Return a random action regardless of state; Asking user feedback has highest priority
+     * @returns {string}
+     */
+    static randomAction() {
+        let action = EasyReadingReasoner.A.askUser;
+        let rand = Math.random();
+        if (rand > 0.5) {
+            if (rand < 0.75) {
+                action = EasyReadingReasoner.A.nop;
+            } else {
+                action = EasyReadingReasoner.A.showHelp;
+            }
+        }
+        return action
+    }
+
+
+}
+
+class QLearningReasoner extends EasyReadingReasoner {
+
+    ucb = 0; // Upper-Confidence-Bound Action Selection constant
+    q_func = null;  // Action value function: (n_states x n_features) tensor
+
+    constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
+        super(step_size, x_offset, y_offset, gamma, eps, eps_decay);
+        this.model_type = 'q_learning';
+        this.ucb = ucb;
+        this.initQFunction();
+        this.resetStatus();
+    }
+
+    load(hyperparams, params) {
+        super.load(hyperparams);
+        this.model_type = 'q_learning';
+        // Copy reasoner state, if given
+        if (params && !background_util.isEmptyObject(params)) {
+            // TODO
+        }
+    }
+
+    initQFunction() {
+        this.q_func = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
+            [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],  // Preferred actions in ties
+            [EasyReadingReasoner.A.ignore],  // Never return this action, used for faulty messages
+            this.ucb);
+        console.log('Q function initialized');
+    }
+
+    bestAction() {
+        return this.q_func.epsGreedyAction(this.s_curr, this.eps, this.t_current);
+    }
+
+    updateStep(action, reward) {
+        if (this.q_func) {
+            console.log('Updating Q state-action value function');
+            let q_target = reward + this.gamma * this.q_func.retrieveGreedy(this.s_next, this.t_current);
+            let new_q_value = this.alpha * (q_target - this.q_func.retrieve(this.s_curr, action));
+            this.q_func.update(this.s_curr, action, new_q_value);
+        }
+    }
+
+}
+
+class DoubleQLearningReasoner extends QLearningReasoner {
+
+    q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
+
+    constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
+        super(step_size, x_offset, y_offset, gamma, eps, eps_decay, ucb);
+        this.model_type = 'double_q_learning';
+        this.initDoubleQFunction();
+    }
+
+    initDoubleQFunction() {
+        this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
+            [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],
+            [EasyReadingReasoner.A.ignore],
+            this.ucb);
+        console.log('Double Q function initialized');
+    }
+
+    load(hyperparams, params) {
+        super.load(hyperparams, params);
+        this.model_type = 'double_q_learning';
+        if (params && !background_util.isEmptyObject(params)) {
+            // TODO
+        }
+    }
+
+    bestAction() {
+        return this.q_func.epsGreedyCombinedAction(this.s_curr, this.eps, this.q_func_b, this.t_current);
+    }
+
+    updateStep(action, reward) {
+        if (this.q_func && this.q_func_b) {
+            console.log('Updating Double-Q state-action value function');
+            let to_update = 'a';
+            if (Math.random() < 0.5) {
+                to_update = 'b';
+            }
+            let q_target = 0.0;
+            let new_q_value = 0.0;
+            if (to_update === 'a') {
+                q_target = reward +
+                    this.gamma * this.q_func_b.retrieve(this.s_next,
+                        this.q_func.greedyAction(this.s_next, this.t_current));
+                new_q_value = this.alpha * (q_target - this.q_func.retrieve(this.s_curr, action));
+                this.q_func.update(this.s_curr, action, new_q_value);
+            } else {
+                q_target = reward +
+                    this.gamma * this.q_func.retrieve(this.s_next,
+                        this.q_func_b.greedyAction(this.s_next, this.t_current));
+                new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, action));
+                this.q_func_b.update(this.s_curr, action, new_q_value);
+            }
+        }
+    }
+
+}
+
+class ANNReasoner extends EasyReadingReasoner {
+
+    constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1) {
+        super(step_size, x_offset, y_offset, gamma, eps, eps_decay);
+        this.model_type = 'rnn';
+    }
+
+    load(hyperparams, params) {
+        if ('n_features' in params) {
+            super.load(hyperparams);
+            this.model = tf.sequential();
+            this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));
+            this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));
+            this.model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
+            this.model.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
+            console.log('Model Loaded: ' + this.model);
+        } else {
+            console.log('ANNReasoner could not be loaded: missing number of input features');
+        }
+    }
+
+    bestAction() {
+        return this.model.predict(this.s_curr);
     }
 
 }

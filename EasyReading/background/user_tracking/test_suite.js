@@ -11,10 +11,10 @@ if (start_test) {
     let gamma = 0.1;
     // TESTS BEGIN
     let params = [n_iterations, batch_size, relax_f, weave_f, error_f];
-    let reasoner_q = new EasyReadingReasoner(alpha, 'q_learning', 3, 0, 0, gamma, 0.2, 1);
-    let reasoner_d_q = new EasyReadingReasoner(alpha, 'q_learning', 3, 0, 0, gamma, 0.2, 0.5);
-    let reasoner_d_q_c = new EasyReadingReasoner(alpha, 'q_learning', 3, 0, 0, gamma, 0.2, 0.9); // Best
-    let reasoner_d_q_c_2 = new EasyReadingReasoner(alpha, 'q_learning', 3, 0, 0, gamma, 0.2, 0.95);
+    let reasoner_q = new EasyReadingReasoner('q_learning', alpha, 3, 0, 0, gamma, 0.2, 1);
+    let reasoner_d_q = new EasyReadingReasoner('q_learning', alpha, 3, 0, 0, gamma, 0.2, 0.5);
+    let reasoner_d_q_c = new EasyReadingReasoner('q_learning', alpha, 3, 0, 0, gamma, 0.2, 0.9); // Best
+    let reasoner_d_q_c_2 = new EasyReadingReasoner('q_learning', alpha, 3, 0, 0, gamma, 0.2, 0.95);
     run_tests([reasoner_q, reasoner_d_q, reasoner_d_q_c, reasoner_d_q_c_2], params);
 }
 

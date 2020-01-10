@@ -129,7 +129,7 @@ var background = {
                 }
 
                 if (!this.reasoner) {
-                    this.reasoner = new EasyReadingReasoner(0.01, 'q_learning', 3, 0, -70, 0.1, 0.2, 0.9);
+                    background.requestReasoner();
                 } else {
                     this.reasoner.active = true;
                 }
@@ -228,6 +228,17 @@ var background = {
                 // Forward message to tab content script
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
                 break;
+            case "userReasoner":
+                let reasoner_data = JSON.parse(receivedMessage.reasoner_data);
+                if (reasoner_data) {
+                    if ('params' in reasoner_data && !background_util.isEmptyObject(reasoner_data.params)) {
+                        // TODO
+                    } else {
+                        background.reasoner = new EasyReadingReasoner('');
+                        // TODO
+                    }
+                }
+                break;
             default:
                 console.log("Error: Unknown message type:" + receivedMessage.type);
                 console.log(message);
@@ -245,7 +256,9 @@ var background = {
 
     onDisconnectFromTracking: async function (error) {
         background.errorMsg = error;
-        this.reasoner.active = false; // comment when testing
+        if (this.reasoner) {
+            this.reasoner.active = false; // comment when testing
+        }
     },
 
     onMessageFromTracking: async function (json_msg) {
@@ -283,6 +296,12 @@ var background = {
                 }
             );
         }
+    },
+
+    requestReasoner() {
+        cloudWebSocket.sendMessage(JSON.stringify({
+            type: "loadReasoner",
+        }));
     },
 
     handleReasonerAction(action) {
@@ -560,7 +579,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     portInfo.startUpComplete = true;
                     console.log(p.sender.tab.id);
                     console.log("startup complete");
-                    if (background.reasoner.active) {
+                    if (background.reasoner && background.reasoner.active) {
                         console.log("startUpComplete reset");
                         background.reasoner.resetStatus();
                     }
