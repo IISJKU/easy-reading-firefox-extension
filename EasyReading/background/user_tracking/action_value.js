@@ -30,7 +30,7 @@ class ActionValueFunction {
     }
 
     retrieve(state, action) {
-        let state_data = this.getStateRepresentation(state);
+        let state_data = background_util.getStateRepresentation(state);
         if (state_data in this.q && action in this.q[state_data]) {
             return this.q[state_data][action];
         } else {
@@ -53,7 +53,7 @@ class ActionValueFunction {
     greedyCombinedAction(state, q_b, t) {
         let chosen_a = null;
         if (state) {
-            let state_data = this.getStateRepresentation(state);
+            let state_data = background_util.getStateRepresentation(state);
             if (state_data in this.q) {
                 let tied_actions = [];
                 let v = Number.NEGATIVE_INFINITY;
@@ -143,7 +143,7 @@ class ActionValueFunction {
      */
     insert(state, action, value, update=false) {
         if (state) {
-            let state_data = this.getStateRepresentation(state);
+            let state_data = background_util.getStateRepresentation(state);
             if (state_data in this.q) {
                 if (action in this.q[state_data]) {
                     if (update) {
@@ -192,18 +192,21 @@ class ActionValueFunction {
         return a;
     }
 
-    getRandomActionIndex() {
-        return Math.floor(Math.random() * this.n_actions);
+    serialize() {
+        return JSON.stringify(this.q);
     }
 
-    getStateRepresentation(state) {
-        let state_data = null;
-        if (isTensor(state)) {
-            state_data = state.dataSync();
+    load(serialized_q) {
+        if (serialized_q && !background_util.isEmptyObject(serialized_q)) {
+            this.q = JSON.parse(serialized_q);
         } else {
-            state_data = state;
+            this.q = {};
         }
-        return state_data;
+
+    }
+
+    getRandomActionIndex() {
+        return Math.floor(Math.random() * this.n_actions);
     }
 
     static argMax(array) {

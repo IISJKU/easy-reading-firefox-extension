@@ -6,9 +6,6 @@ class EasyReadingReasoner {
 
     // Model hyper-parameters
     model_type = 'none';
-    is_active = true;
-    is_paused = false;
-    testing = true;
     model = null;
     alpha = 0.01;  // Step size
     gamma = 0.1;  // Discount factor
@@ -17,17 +14,13 @@ class EasyReadingReasoner {
     episode_length = 20;  // Time steps before ending episode
 
     set active(active) {
-        if (this.testing) {
-            this.is_active = false;
+        this.is_active = active;
+        if (active) {
+            console.log("Reasoner enabled");
         } else {
-            this.is_active = active;
-            if (active) {
-                console.log("Reasoner enabled");
-            } else {
-                console.log("Reasoner disabled");
-                this.resetStatus();
-                console.log('Reset by set active');
-            }
+            console.log("Reasoner disabled");
+            this.resetStatus();
+            console.log('Reset by set active');
         }
     }
     get active() {
@@ -35,6 +28,8 @@ class EasyReadingReasoner {
     }
 
     // Internal parameters
+    is_active = true;
+    is_paused = false;
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
     reward = null;  // Reward obtained in current timestep
     s_curr = null;  // Current state (tensor)
@@ -94,6 +89,26 @@ class EasyReadingReasoner {
             this.gaze_offsets = [hyperparams.x_offset, hyperparams.y_offset];
         }
         this.model = null;
+    }
+
+    async to_dict() {
+        let hyperparams = {
+            'model_type': this.model_type,
+            'step_size' : this.alpha,
+            'gamma': this.gamma,
+            'eps': this.eps,
+            'eps_decay': this.eps_decay,
+            'episode_length': this.episode_length,
+        };
+        return {
+          'hyperparams' : hyperparams,
+          'params' : {},
+        };
+    }
+
+    async serialize() {
+        let model_dict = await this.to_dict();
+        return JSON.stringify(model_dict);
     }
 
     /**
@@ -607,10 +622,25 @@ class QLearningReasoner extends EasyReadingReasoner {
     load(hyperparams, params) {
         super.load(hyperparams);
         this.model_type = 'q_learning';
-        // Copy reasoner state, if given
-        if (params && !background_util.isEmptyObject(params)) {
-            // TODO
+        if (!this.q_func) {
+            this.initQFunction();
         }
+        // Copy reasoner state, if given
+        if ('q_func' in params) {
+            this.q_func.load(params.q_func);
+        }
+        if ('ucb' in params) {
+            this.ucb = params.ucb;
+        }
+    }
+
+    async to_dict() {
+        let this_dict = await super.to_dict();
+        this_dict['params'] = {
+            'ucb': this.ucb,
+            'q_func': this.q_func,
+        };
+        return this_dict;
     }
 
     initQFunction() {
@@ -657,9 +687,18 @@ class DoubleQLearningReasoner extends QLearningReasoner {
     load(hyperparams, params) {
         super.load(hyperparams, params);
         this.model_type = 'double_q_learning';
-        if (params && !background_util.isEmptyObject(params)) {
-            // TODO
+        if (!this.q_func_b || !this.q_func) {
+            this.initDoubleQFunction();
         }
+        if ('q_func_b' in params) {
+            this.q_func_b.load(params.q_func_b);
+        }
+    }
+
+    async to_dict() {
+        let this_dict = await super.to_dict();
+        this_dict['params']['q_func_b'] = this.q_func_b;
+        return this_dict;
     }
 
     bestAction() {
@@ -716,6 +755,10 @@ class ANNReasoner extends EasyReadingReasoner {
 
     bestAction() {
         return this.model.predict(this.s_curr);
+    }
+
+    async to_dict() {
+        return await this.model.save(tf.io.withSaveHandler(async modelArtifacts => modelArtifacts));
     }
 
 }

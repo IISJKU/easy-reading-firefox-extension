@@ -7,6 +7,25 @@ let background_util = {
             }
         }
         return true;
-    }
+    },
+
+    getStateRepresentation: function (state) {
+        let state_data = null;
+        if (background_util.isTensor(state)) {
+            state_data = state.dataSync();
+        } else {
+            state_data = state;
+        }
+        return state_data;
+    },
+
+    isTensor: function (what) {
+        let is_t = false;
+        if (what) {
+            is_t = typeof(what) === 'object' && 'shape' in what;
+        }
+        return is_t;
+    },
+
 };
 

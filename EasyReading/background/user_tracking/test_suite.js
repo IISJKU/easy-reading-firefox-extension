@@ -21,9 +21,6 @@ if (start_test) {
 async function run_tests(agents, test_config) {
     // Initialize variables
     let [n_iterations, batch_size, relax_f, weave_f, error_f] = test_config;
-    for (let i=0; i<agents.length; i++) {
-        agents[i].testing = true;
-    }
     let n_relaxed = Math.ceil(n_iterations * relax_f);
     let n_burst = Math.ceil(n_iterations * weave_f);
     let new_burst = true;
