@@ -201,11 +201,8 @@ var background = {
                 // getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
                 // ports[receivedMessage.data.tab_id].postMessage(receivedMessage);
                 break;
-            case "userLogout" : {
-
+            case "userLogout":
                 await background.logoutUser();
-
-            }
                 break;
             case "triggerHelpFailed":
                 background.reasoner.resetStatus();
@@ -231,13 +228,11 @@ var background = {
             case "userReasoner":
                 let reasoner_data = JSON.parse(receivedMessage.reasoner_data);
                 if (reasoner_data) {
-                    if ('params' in reasoner_data && !background_util.isEmptyObject(reasoner_data.params)) {
-                        // TODO
-                    } else {
-                        background.reasoner = new EasyReadingReasoner('');
-                        // TODO
-                    }
+                    background.reasoner = EasyReadingReasonerFactory.loadReasoner(reasoner_data);
                 }
+                break;
+            case "persistReasoner":
+                background.persistReasoner();
                 break;
             default:
                 console.log("Error: Unknown message type:" + receivedMessage.type);
@@ -302,6 +297,17 @@ var background = {
         cloudWebSocket.sendMessage(JSON.stringify({
             type: "loadReasoner",
         }));
+    },
+
+    persistReasoner() {
+        if (background.reasoner) {
+            cloudWebSocket.sendMessage(JSON.stringify({
+                type: "persistReasoner",
+                reasoner_data: background.reasoner.serialize(),
+            }));
+        } else {
+            console.log("Can't persist reasoner - it has not been loaded yet.");
+        }
     },
 
     handleReasonerAction(action) {

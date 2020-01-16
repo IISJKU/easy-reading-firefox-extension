@@ -28,6 +28,7 @@ class EasyReadingReasoner {
     }
 
     // Internal parameters
+    id = -1;
     is_active = true;
     is_paused = false;
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
@@ -93,7 +94,6 @@ class EasyReadingReasoner {
 
     async to_dict() {
         let hyperparams = {
-            'model_type': this.model_type,
             'step_size' : this.alpha,
             'gamma': this.gamma,
             'eps': this.eps,
@@ -101,6 +101,8 @@ class EasyReadingReasoner {
             'episode_length': this.episode_length,
         };
         return {
+          'id': this.id,
+          'model_type': this.model_type,
           'hyperparams' : hyperparams,
           'params' : {},
         };
@@ -619,18 +621,20 @@ class QLearningReasoner extends EasyReadingReasoner {
         this.resetStatus();
     }
 
-    load(hyperparams, params) {
+    load(id, hyperparams, params) {
         super.load(hyperparams);
+        this.id = id;
         this.model_type = 'q_learning';
         if (!this.q_func) {
             this.initQFunction();
         }
         // Copy reasoner state, if given
         if ('q_func' in params) {
-            this.q_func.load(params.q_func);
+            this.q_func = params.q_func;
         }
         if ('ucb' in params) {
             this.ucb = params.ucb;
+            this.q_func.ucb = params.ucb;
         }
     }
 
@@ -684,14 +688,14 @@ class DoubleQLearningReasoner extends QLearningReasoner {
         console.log('Double Q function initialized');
     }
 
-    load(hyperparams, params) {
-        super.load(hyperparams, params);
+    load(id, hyperparams, params) {
+        super.load(id, hyperparams, params);
         this.model_type = 'double_q_learning';
         if (!this.q_func_b || !this.q_func) {
             this.initDoubleQFunction();
         }
         if ('q_func_b' in params) {
-            this.q_func_b.load(params.q_func_b);
+            this.q_func_b = params.q_func_b;
         }
     }
 
@@ -739,9 +743,10 @@ class ANNReasoner extends EasyReadingReasoner {
         this.model_type = 'rnn';
     }
 
-    load(hyperparams, params) {
+    load(id, hyperparams, params) {
         if ('n_features' in params) {
             super.load(hyperparams);
+            this.id = id;
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));
             this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));
