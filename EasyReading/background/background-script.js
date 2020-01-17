@@ -613,6 +613,7 @@ browser.runtime.onConnect.addListener(function (p) {
                             gaze_y: m.posY,
                             input: m.input,
                             automatic: m.automatic,  // True if help was triggered by reasoner, false if user-initiated
+                            wait_tools: m.wait_tools,
                         };
                         portManager.addPortInfoToMessage(msg, p);
                         cloudWebSocket.sendMessage(JSON.stringify(msg));
@@ -621,7 +622,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "toolTriggered":
-                    if (background.reasoner.active) {
+                    if (background.reasoner && background.reasoner.active) {
                         background.reasoner.handleToolTriggered(m.wait);
                         currentPort.postMessage({
                             type: "closeDialogs",

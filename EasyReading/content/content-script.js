@@ -124,11 +124,12 @@ let contentScriptController = {
                         posY: gazeY,
                         input: JSON.stringify(input),
                         automatic: true,
+                        wait_tools: JSON.stringify(util.delayedPresentations()),
                     });
                     confirm_dialog.setInput(input);
                 }
                 if (!can_trigger) {
-                    console.log("No input found. Help could not be triggered. Reasoner resetted.");
+                    console.log("No input found. Help could not be triggered. Reasoner reset.");
                     contentScriptController.portToBackGroundScript.postMessage({type: "resetReasoner"});
                 }
                 break;
@@ -267,6 +268,25 @@ let util ={
             str = '/' + str;
         }
         return "https://" + url + '/' + str;
+    },
+    delayedPresentations: function() {
+        let tools = [];
+        if (easyReading && 'userInterfaces' in easyReading) {
+            for (let i=0; i<easyReading.userInterfaces.length; i++) {
+                let ui = easyReading.userInterfaces[i];
+                for (let j=0; j<ui.tools.length; j++) {
+                    let tool = ui.tools[j];
+                    console.log(tool);
+                    if ('presentation' in tool && tool.presentation) {
+                        let p = tool.presentation;
+                        if ('instantDisplay' in p && !p.instantDisplay) {
+                            tools.push([i, j]);
+                        }
+                    }
+                }
+            }
+        }
+        return tools;
     }
 };
 

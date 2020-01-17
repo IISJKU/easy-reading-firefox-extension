@@ -35,6 +35,7 @@
       "background/user_tracking/data_processor.js",
       "background/user_tracking/action_value.js",
       "background/user_tracking/reasoner.js",
+      "background/user_tracking/reasoner_factory.js",
       "background/user_tracking/tracking-web-socket.js",
       "background/background-script.js"
     ]

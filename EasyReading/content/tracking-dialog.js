@@ -52,6 +52,7 @@ let tracking_dialog = {
                         posY: tracking_obj.pos_y,
                         input: JSON.stringify(tracking_obj.input),
                         automatic: false,
+                        wait_tools: JSON.stringify(util.delayedPresentations()),
                     });
                 } else {
                     console.log('User rejected help');

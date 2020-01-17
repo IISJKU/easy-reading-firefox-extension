@@ -14,7 +14,6 @@ class ActionValueFunction {
      * @param ucb_c: float; UCB degree of exploration
      */
     constructor(actions, preferred_a=[], ignore_a=[], ucb_c=0.0) {
-        console.log(actions);
         if (actions && actions.length > 0) {
             this.actions = [];
             for (let i=0; i<actions.length; i++) {

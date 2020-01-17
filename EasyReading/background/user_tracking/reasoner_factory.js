@@ -25,9 +25,9 @@ class EasyReadingReasonerFactory {
         let reasoner = null;
         if (model_type) {
             if (model_type.startsWith('q_learning')) {
-                reasoner = QLearningReasoner();
+                reasoner = new QLearningReasoner();
             } else if (model_type.startsWith('double_q_')) {
-                reasoner = DoubleQLearningReasoner();
+                reasoner = new DoubleQLearningReasoner();
             } else {
                 created = false;
             }

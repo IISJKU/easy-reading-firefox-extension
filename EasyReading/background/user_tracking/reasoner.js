@@ -44,11 +44,13 @@ class EasyReadingReasoner {
     feature_names = [];
     cancel_unfreeze = false;
     freeze_start = null;
+    save_start = null;
 
     // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
     UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
+    SAVE_TIME = 300000;  // Time between calls to persist model parameters
     BUFFER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
