@@ -5,10 +5,12 @@ var background = {
     uuid: null,
    // authMethod: null,
     config: null,
+    userLoggedIn:false,
+
     connectToCloud: function (config) {
 
-        cloudWebSocket.initWebSocket(config);
-        this.config = config;
+        cloudWebSocket.initWebSocket({...config});
+        background.config = {...config};
     },
 
     onConnectedToCloud: function (event) {
@@ -116,6 +118,7 @@ var background = {
                 } catch (error) {
 
                 }
+                background.userLoggedIn = true;
 
 
                 break;
@@ -223,10 +226,19 @@ var background = {
 
     },
     onDisconnectFroCloud: async function (error) {
-        background.errorMsg = error;
-        if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
-            background.logoutUser(error);
+
+        await background.shutdownTabs();
+
+        if(background.userLoggedIn){
+            background.connectToCloud(background.config);
+            background.reconnect = true;
+        }else{
+            background.errorMsg = error;
+            if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
+                await background.logoutUser(error);
+            }
         }
+
 
     },
 
@@ -295,8 +307,27 @@ var background = {
     },
 
     logoutUser: async function (errorMsg) {
+        background.userLoggedIn = false;
         scriptManager.reset();
+        cloudWebSocket.closeWebSocket();
+        await background.shutdownTabs();
 
+        let configTabs = await background.getOpenConfigTabs();
+        configTabs.forEach(async (tab) => {
+            browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
+        });
+
+        let activeOptionPages = background.getActiveOptionPages();
+        activeOptionPages.forEach((optionsPage) => {
+            optionsPage.updateStatus(errorMsg);
+        });
+
+        if (configTabs.length === 0 && activeOptionPages.length === 0) {
+            browser.runtime.openOptionsPage();
+        }
+    },
+
+    async shutdownTabs(){
         let m = {
             type: "userLogout",
             data: null,
@@ -316,21 +347,6 @@ var background = {
 
 
         });
-
-
-        let configTabs = await background.getOpenConfigTabs();
-        configTabs.forEach(async (tab) => {
-            browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
-        });
-
-        let activeOptionPages = background.getActiveOptionPages();
-        activeOptionPages.forEach((optionsPage) => {
-            optionsPage.updateStatus(errorMsg);
-        });
-
-        if (configTabs.length === 0 && activeOptionPages.length === 0) {
-            browser.runtime.openOptionsPage();
-        }
     }
 };
 
@@ -533,39 +549,6 @@ let tabUiConfigManager = {
 
 };
 
-/*
-
-function addPort(p) {
-    for (let i = 0; i < ports.length; i++) {
-        if (ports[i].sender.tab.id === p.sender.tab.id) {
-
-            ports[i] = p;
-            return;
-        }
-    }
-    ports.push(p);
-}
-
-function removePort(p) {
-
-    for (let i = 0; i < ports.length; i++) {
-        if (ports[i] === p) {
-            ports.splice(i, 1);
-            return;
-        }
-
-    }
-}
-
-function getPort(window_id, tab_id) {
-
-    for (let i = 0; i < ports.length; i++) {
-        if (ports[i].sender.tab.windowId === window_id && ports[i].sender.tab.id === tab_id) {
-            return ports[i];
-        }
-    }
-}
-*/
 
 browser.browserAction.onClicked.addListener(async () => {
 

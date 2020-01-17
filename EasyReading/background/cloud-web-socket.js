@@ -46,16 +46,16 @@ var cloudWebSocket = {
     },
     onClose: function (event) {
         cloudWebSocket.isConnected = false;
-        cloudWebSocket.webSocket = undefined;
-   //     background.onDisconnectFroCloud(event);
-   //     cloudWebSocket.reconnect();
+        cloudWebSocket.webSocket = null;
+        background.onDisconnectFroCloud(event);
+     //   cloudWebSocket.reconnect();
     },
     onError: function (event) {
         let errorMsg = "Could not connect to: "+event.currentTarget.url;
         cloudWebSocket.isConnected = false;
-        cloudWebSocket.webSocket = undefined;
+        cloudWebSocket.webSocket = null;
         background.onDisconnectFroCloud(errorMsg);
-        cloudWebSocket.reconnect();
+     //   cloudWebSocket.reconnect();
     },
     sendMessage: function (message) {
 
