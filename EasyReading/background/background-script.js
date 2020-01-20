@@ -561,16 +561,16 @@ browser.runtime.onConnect.addListener(function (p) {
         var currentPort = p;
         currentPort.onMessage.addListener(async function (m) {
 
-            console.log(m);
+            // console.log(m);
 
             switch (m.type) {
                 case "cloudRequest":
-                    //Add window id and tab id to the request, so that it can be send back to the original content script
+                    // Add window id and tab id to the request, so that it can be sent back to the original content script
                     portManager.addPortInfoToMessage(m, p);
                     cloudWebSocket.sendMessage(JSON.stringify(m));
                     break;
                 case "getUserProfile":
-                    console.log("GETTING PROFLE");
+                    console.log("GETTING PROFILE");
                     if (scriptManager.profileReceived) {
                         if (scriptManager.debugMode) {
                             m.data = JSON.parse(JSON.stringify(scriptManager));

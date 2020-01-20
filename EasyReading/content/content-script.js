@@ -190,9 +190,6 @@ let contentScriptController = {
                     console.log(m.data);
                     recommendationDialog.showDialogForRecommendation(m.data);
                 }
-
-
-
             }
 
         }
