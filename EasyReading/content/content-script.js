@@ -185,6 +185,16 @@ let contentScriptController = {
                 tracking_dialog.removeAll();
                 confirm_dialog.removeAll();
                 break;
+            case "recommendation": {
+                if (typeof easyReading !== 'undefined') {
+                    console.log(m.data);
+                    recommendationDialog.showDialogForRecommendation(m.data);
+                }
+
+
+
+            }
+
         }
     },
     sendMessageToBackgroundScript: function(message) {

@@ -149,11 +149,14 @@ var background = {
 
                 if (scriptManager.debugMode) {
 
-                    for (let i = 0; i < ports.length; i++) {
+                    for (let i = 0; i < portManager.ports.length; i++) {
+                        if (portManager.ports[i].startUpComplete) {
 
                             message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[i].p.sender.tab.id);
                             portManager.ports[i].p.postMessage(message);
                         }
+
+                    }
 
                 } else {
 
@@ -176,17 +179,19 @@ var background = {
                                     console.log(error);
                                 }
 
-                    }
-                    for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
-                        try {
-                            await browser.tabs.insertCSS({code: (atob(scriptManager.updatedContentCSS[i].css))});
-                        } catch (error) {
-                            console.log(error);
-                        }
+                            }
+                            for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
+                                try {
+                                    await browser.tabs.insertCSS(tabId, {code: (atob(scriptManager.updatedContentCSS[i].css))});
+                                } catch (error) {
+                                    console.log(error);
+                                }
 
                             }
                             message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);
                             portManager.ports[k].p.postMessage(message);
+
+
                         }
 
                     }
@@ -233,6 +238,24 @@ var background = {
                 break;
             case "persistReasoner":
                 background.persistReasoner();
+                break;
+            case "recommendation":
+
+                console.log(receivedMessage);
+                browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    let currTab = tabs[0];
+                    if (currTab) { // Sanity check
+                        /* do stuff */
+                        let port = portManager.getPort(currTab.id);
+                        if(port){
+                            port.p.postMessage(receivedMessage);
+                        }
+
+                        console.log(currTab);
+                    }
+                });
+
+
                 break;
             default:
                 console.log("Error: Unknown message type:" + receivedMessage.type);
@@ -537,6 +560,8 @@ browser.runtime.onConnect.addListener(function (p) {
         // ports[p.sender.tab.id] = p;
         var currentPort = p;
         currentPort.onMessage.addListener(async function (m) {
+
+            console.log(m);
 
             switch (m.type) {
                 case "cloudRequest":
