@@ -131,6 +131,7 @@ var background = {
                 if (!this.reasoner) {
                     background.requestReasoner();
                 } else {
+                    if (trackingWebSocket.isReady())
                     this.reasoner.active = true;
                 }
 
@@ -233,7 +234,8 @@ var background = {
             case "userReasoner":
                 let reasoner_data = JSON.parse(receivedMessage.reasoner_data);
                 if (reasoner_data) {
-                    background.reasoner = EasyReadingReasonerFactory.loadReasoner(reasoner_data);
+                    let activate = trackingWebSocket.isReady();
+                    background.reasoner = EasyReadingReasonerFactory.loadReasoner(reasoner_data, activate);
                 }
                 break;
             case "persistReasoner":

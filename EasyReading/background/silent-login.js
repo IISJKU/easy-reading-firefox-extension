@@ -28,7 +28,9 @@ var silentLogin = {
                     if (!background.reasoner) {
                         background.requestReasoner();
                     } else {
-                        background.reasoner.active = true;
+                        if (trackingWebSocket.isReady()) {
+                            background.reasoner.active = true;
+                        }
                     }
                 }
             } catch (e) {

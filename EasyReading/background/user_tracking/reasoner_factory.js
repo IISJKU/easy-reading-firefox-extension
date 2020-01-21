@@ -1,6 +1,6 @@
 class EasyReadingReasonerFactory {
 
-    static loadReasoner(model_dict) {
+    static loadReasoner(model_dict, active=false) {
         let reasoner = null;
         let hyperparams = {};
         let params = {};
@@ -16,6 +16,7 @@ class EasyReadingReasonerFactory {
                 id = model_dict.id;
             }
             reasoner = EasyReadingReasonerFactory.createReasoner(id, model_dict.model_type, hyperparams, params);
+            reasoner.active = active;
         }
         return reasoner;
     }
