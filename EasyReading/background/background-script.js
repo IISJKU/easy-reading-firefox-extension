@@ -3,9 +3,9 @@
 var background = {
     errorMsg: null,
     uuid: null,
-   // authMethod: null,
+    // authMethod: null,
     config: null,
-    userLoggedIn:false,
+    userLoggedIn: false,
 
     connectToCloud: function (config) {
 
@@ -61,7 +61,7 @@ var background = {
                 let configTabIds = [];
                 if (configTabs.length !== 0) {
                     configTabs.forEach((tab) => {
-               //         browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
+                        //         browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
                         configTabIds.push(tab.id);
                     });
                 }
@@ -199,15 +199,15 @@ var background = {
 
                 break;
             }
-            case "recommendation":{
+            case "recommendation": {
 
                 console.log(receivedMessage);
-                browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                browser.tabs.query({active: true, currentWindow: true}, function (tabs) {
                     let currTab = tabs[0];
                     if (currTab) { // Sanity check
                         /* do stuff */
                         let port = portManager.getPort(currTab.id);
-                        if(port){
+                        if (port) {
                             port.p.postMessage(receivedMessage);
                         }
 
@@ -229,10 +229,10 @@ var background = {
 
         await background.shutdownTabs();
 
-        if(background.userLoggedIn){
+        if (background.userLoggedIn) {
             background.connectToCloud(background.config);
             background.reconnect = true;
-        }else{
+        } else {
             background.errorMsg = error;
             if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
                 await background.logoutUser(error);
@@ -277,7 +277,7 @@ var background = {
         let tabs = await browser.tabs.query({});
 
         tabs.forEach((tab) => {
-            if (tab.url.indexOf("https://" + cloudWebSocket.config.url + "/client/") !== -1) {
+            if (tab.url.indexOf("https://" + cloudWebSocket.config.url) !== -1) {
                 configTabs.push(tab);
             } else if (tab.url.indexOf(backgroundUrl) !== -1) {
                 if (includeOptionsPage) {
@@ -289,6 +289,17 @@ var background = {
 
         return configTabs;
     },
+    reloadAllConfigurationTabs: async function () {
+        let tabs = await browser.tabs.query({});
+        tabs.forEach((tab) => {
+            if (tab.url.indexOf("https://" + cloudWebSocket.config.url) !== -1) {
+                browser.tabs.reload(tab.id);
+            }
+        });
+
+
+    },
+
     updateTabs: function () {
 
         browser.tabs.query({}, (tabs) => {
@@ -313,9 +324,18 @@ var background = {
         await background.shutdownTabs();
 
         let configTabs = await background.getOpenConfigTabs();
-        configTabs.forEach(async (tab) => {
-            browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
-        });
+
+        if (configTabs.length > 0) {
+            //Close other tabs
+
+            for (let i = 1; i < configTabs.length; i++) {
+                await browser.tabs.remove(configTabs[i].id);
+            }
+
+            await browser.tabs.update(configTabs[0].id, {url: browser.extension.getURL('/background/config/config.html')});
+
+
+        }
 
         let activeOptionPages = background.getActiveOptionPages();
         activeOptionPages.forEach((optionsPage) => {
@@ -325,9 +345,15 @@ var background = {
         if (configTabs.length === 0 && activeOptionPages.length === 0) {
             browser.runtime.openOptionsPage();
         }
+
+        setTimeout(async function () {
+            await background.reloadAllConfigurationTabs();
+        }, 300);
+
+
     },
 
-    async shutdownTabs(){
+    async shutdownTabs() {
         let m = {
             type: "userLogout",
             data: null,
@@ -553,10 +579,19 @@ let tabUiConfigManager = {
 browser.browserAction.onClicked.addListener(async () => {
 
     let configTabs = await background.getOpenConfigTabs(true);
-    if (configTabs.length !== 0) {
-        browser.tabs.update(configTabs[0].id, {active: true});
-    } else {
-        browser.runtime.openOptionsPage();
+    if (configTabs.length > 0) {
+        for(let i=0; i < configTabs.length; i++){
+
+            if (configTabs[i].url.indexOf("https://" + cloudWebSocket.config.url+"/client") !== -1) {
+                browser.tabs.update(configTabs[0].id, {active: true});
+
+                return;
+
+            }
+        }
     }
+
+    browser.runtime.openOptionsPage();
+
 });
 
