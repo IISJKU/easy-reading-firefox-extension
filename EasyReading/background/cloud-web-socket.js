@@ -5,15 +5,23 @@ var cloudWebSocket = {
     isConnected: false,
     initWebSocket: function (config) {
 
-        if(config){
-            this.config = JSON.parse(JSON.stringify(config));
+        try{
+            if(config){
+                this.config = JSON.parse(JSON.stringify(config));
+            }
+            cloudWebSocket.closeWebSocket();
+            cloudWebSocket.webSocket = new WebSocket("wss://"+this.config.url);
+            cloudWebSocket.webSocket.onopen = this.onOpen;
+            cloudWebSocket.webSocket.onmessage = this.onMessage;
+            cloudWebSocket.webSocket.onclose = this.onClose;
+            cloudWebSocket.webSocket.onerror = this.onError;
+
+            return true;
+        }catch (e) {
+            console.log(e);
+            return false;
         }
-        cloudWebSocket.closeWebSocket();
-        cloudWebSocket.webSocket = new WebSocket("wss://"+this.config.url);
-        cloudWebSocket.webSocket.onopen = this.onOpen;
-        cloudWebSocket.webSocket.onmessage = this.onMessage;
-        cloudWebSocket.webSocket.onclose = this.onClose;
-        cloudWebSocket.webSocket.onerror = this.onError;
+
 
     },
 
@@ -45,17 +53,19 @@ var cloudWebSocket = {
         }
     },
     onClose: function (event) {
+        if(!cloudWebSocket.isConnected){
+            //set user logged in to false as we could not connect to cloud endpoint - new user login is required.
+            background.userLoggedIn = false;
+        }
         cloudWebSocket.isConnected = false;
         cloudWebSocket.webSocket = null;
-        background.onDisconnectFroCloud(event);
-     //   cloudWebSocket.reconnect();
+        let errorMsg = "Could not connect to: "+event.currentTarget.url;
+        background.onDisconnectFroCloud(errorMsg);
+
     },
     onError: function (event) {
-        let errorMsg = "Could not connect to: "+event.currentTarget.url;
-        cloudWebSocket.isConnected = false;
-        cloudWebSocket.webSocket = null;
-        background.onDisconnectFroCloud(errorMsg);
-     //   cloudWebSocket.reconnect();
+        cloudWebSocket.onClose(event);
+
     },
     sendMessage: function (message) {
 

@@ -7,10 +7,14 @@ var background = {
     config: null,
     userLoggedIn: false,
 
-    connectToCloud: function (config) {
+    connectToCloud: async function (config) {
 
-        cloudWebSocket.initWebSocket({...config});
-        background.config = {...config};
+        if(cloudWebSocket.initWebSocket({...config})){
+            background.config = {...config};
+        }else{
+            await background.logoutUser("Could not connect to cloud server!");
+        }
+
     },
 
     onConnectedToCloud: function (event) {
@@ -79,8 +83,8 @@ var background = {
 
                     let tabs = await browser.tabs.query({});
 
-                    tabs.forEach(async (tab) => {
-
+                    for(let i=0; i < tabs.length; i++){
+                        let tab = tabs[i];
                         if (!easyReading.isIgnoredUrl(tab.url) && !tab.url.startsWith("about:")) {
 
                             if (tab.status === "complete") {
@@ -108,17 +112,23 @@ var background = {
                                     }
 
                                     browser.tabs.sendMessage(tab.id, m);
+                                    console.log("MUH");
 
                                 }
                             }
                         }
-
-
-                    });
+                    }
                 } catch (error) {
 
                 }
+
+                console.log("MaaaaaUH");
                 background.userLoggedIn = true;
+                //Update options pages that logging in was successfull
+                let activeOptionPages = background.getActiveOptionPages();
+                activeOptionPages.forEach((optionsPage) => {
+                    optionsPage.updateStatus();
+                });
 
 
                 break;
@@ -226,17 +236,18 @@ var background = {
 
     },
     onDisconnectFroCloud: async function (error) {
-
         await background.shutdownTabs();
-
         if (background.userLoggedIn) {
             background.connectToCloud(background.config);
             background.reconnect = true;
         } else {
+
             background.errorMsg = error;
             if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
                 await background.logoutUser(error);
             }
+
+            cloudWebSocket.reconnect();
         }
 
 
