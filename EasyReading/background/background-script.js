@@ -242,7 +242,6 @@ var background = {
                 background.persistReasoner();
                 break;
             case "recommendation":
-
                 console.log(receivedMessage);
                 browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
                     let currTab = tabs[0];
@@ -256,8 +255,6 @@ var background = {
                         console.log(currTab);
                     }
                 });
-
-
                 break;
             default:
                 console.log("Error: Unknown message type:" + receivedMessage.type);
@@ -500,7 +497,9 @@ var background = {
 
     sendFeedbackToReasoner(feedback, wait=false) {
         if (this.reasoner.active) {
+            this.reasoner.user_action = feedback;
             this.reasoner.setHumanFeedback(feedback);
+            background.reasoner.unfreeze();
             if (wait) {
                 this.reasoner.startCollectingNextState();
             } else {
@@ -657,20 +656,14 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "confirmHelp":
-                    background.reasoner.unfreeze();
                     console.log('confirmHelp: setting user action: help');
-                    background.reasoner.user_action = 'help';
                     background.sendFeedbackToReasoner("help");
                     break;
                 case "helpRejected":
                     console.log('helpRejected: setting user action: ok');
-                    background.reasoner.unfreeze();
-                    background.reasoner.user_action = 'ok';
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "requestHelpRejected":
-                    background.reasoner.unfreeze();
-                    background.reasoner.user_action = 'ok';
                     console.log('requestHelpRejected: setting user action: ok');
                     background.sendFeedbackToReasoner("ok");
                     break;
