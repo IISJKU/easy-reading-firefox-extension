@@ -9,15 +9,6 @@ var easyReading = {
                 description: "DEV server",
                 url: "dev.easyreading-cloud.eu",
             },
-            /*
-            {
-                description: "Production server",
-                url: "easy-reading.eu-gb.mybluemix.net",
-            },
-            {
-                description: "Development server",
-                url: "dev-easy-reading.eu-gb.mybluemix.net",
-            },*/
             {
                 description: "Localhost",
                 url: "localhost:8080"

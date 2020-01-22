@@ -112,7 +112,6 @@ var background = {
                                     }
 
                                     browser.tabs.sendMessage(tab.id, m);
-                                    console.log("MUH");
 
                                 }
                             }
@@ -122,7 +121,6 @@ var background = {
 
                 }
 
-                console.log("MaaaaaUH");
                 background.userLoggedIn = true;
                 //Update options pages that logging in was successfull
                 let activeOptionPages = background.getActiveOptionPages();
@@ -137,7 +135,6 @@ var background = {
                 scriptManager.reset();
                 scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url, true);
 
-                console.log("user update");
                 let message = {
                     type: receivedMessage.type,
                     data: JSON.parse(JSON.stringify(scriptManager)),
@@ -195,13 +192,11 @@ var background = {
                 }
 
 
-                // background.updateTabs();
 
                 break;
             case "cloudRequestResult":
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
-                // getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
-                // ports[receivedMessage.data.tab_id].postMessage(receivedMessage);
+
                 break;
             case "userLogout" : {
 
@@ -211,17 +206,16 @@ var background = {
             }
             case "recommendation": {
 
-                console.log(receivedMessage);
                 browser.tabs.query({active: true, currentWindow: true}, function (tabs) {
                     let currTab = tabs[0];
-                    if (currTab) { // Sanity check
-                        /* do stuff */
+                    if (currTab) {
+
                         let port = portManager.getPort(currTab.id);
                         if (port) {
                             port.p.postMessage(receivedMessage);
                         }
 
-                        console.log(currTab);
+
                     }
                 });
 
@@ -594,7 +588,7 @@ browser.browserAction.onClicked.addListener(async () => {
         for(let i=0; i < configTabs.length; i++){
 
             if (configTabs[i].url.indexOf("https://" + cloudWebSocket.config.url+"/client") !== -1) {
-                browser.tabs.update(configTabs[0].id, {active: true});
+                browser.tabs.update(configTabs[i].id, {active: true});
 
                 return;
 

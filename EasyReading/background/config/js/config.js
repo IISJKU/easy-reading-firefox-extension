@@ -105,7 +105,6 @@ $(document).ready(function () {
 function updateStatus(error) {
     $("#debugModeInfo").empty();
     let backgroundPage = browser.extension.getBackgroundPage();
-    console.log(backgroundPage.cloudWebSocket.isConnected);
 
     if(backgroundPage.cloudWebSocket.isConnected){
 

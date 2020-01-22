@@ -28,11 +28,15 @@ var cloudWebSocket = {
     closeWebSocket: function () {
 
         if (this.webSocket) {
-            this.webSocket.onopen = null;
-            this.webSocket.onmessage = null;
-            this.webSocket.onclose = null;
-            this.webSocket.onerror = null;
-            this.webSocket.close();
+            try{
+                this.webSocket.onopen = null;
+                this.webSocket.onmessage = null;
+                this.webSocket.onclose = null;
+                this.webSocket.onerror = null;
+                this.webSocket.close();
+            }catch (e) {
+                console.log(e);
+            }
         }
     },
 
@@ -58,6 +62,7 @@ var cloudWebSocket = {
             background.userLoggedIn = false;
         }
         cloudWebSocket.isConnected = false;
+        cloudWebSocket.closeWebSocket();
         cloudWebSocket.webSocket = null;
         let errorMsg = "Could not connect to: "+event.currentTarget.url;
         background.onDisconnectFroCloud(errorMsg);

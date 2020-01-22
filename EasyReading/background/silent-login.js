@@ -49,6 +49,8 @@ var silentLogin = {
                 }
 
 
+            }else{
+                background.reconnect = false;
             }
 
         }else{
