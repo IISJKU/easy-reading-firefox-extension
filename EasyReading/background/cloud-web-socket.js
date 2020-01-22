@@ -78,7 +78,7 @@ var cloudWebSocket = {
 
         setTimeout(function () {
              cloudWebSocket.initWebSocket();
-        }, 1000);
+        }, 2000);
     },
 
     ping:function () {
