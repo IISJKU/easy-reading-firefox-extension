@@ -20,7 +20,6 @@ class EasyReadingReasoner {
         } else {
             console.log("Reasoner disabled");
             this.resetStatus();
-            console.log('Reset by set active');
         }
     }
     get active() {
@@ -44,6 +43,7 @@ class EasyReadingReasoner {
     feature_names = [];
     cancel_unfreeze = false;
     freeze_start = null;
+    serializeTimeout = null;
 
     // Tracking parameters
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
@@ -79,11 +79,13 @@ class EasyReadingReasoner {
         this.gaze_offsets = [x_offset, y_offset];
     }
 
-    load(hyperparams) {
+    load(id, hyperparams) {
         // Copy hyper-parameters to this reasoner
+        this.id = id;
+        let this_reasoner = this;
         Object.keys(hyperparams).forEach(function(key) {
-            if (this.hasOwnProperty(key)) {
-                this[key] = hyperparams[key];
+            if (this_reasoner.hasOwnProperty(key)) {
+                this_reasoner[key] = hyperparams[key];
             }
         });
         if ('x_offset' in hyperparams && 'y_offset' in hyperparams) {
@@ -94,12 +96,16 @@ class EasyReadingReasoner {
 
     async to_dict() {
         let hyperparams = {
-            'step_size' : this.alpha,
+            'alpha' : this.alpha,
             'gamma': this.gamma,
             'eps': this.eps,
             'eps_decay': this.eps_decay,
             'episode_length': this.episode_length,
         };
+        if (this.gaze_offsets.length === 2) {
+            hyperparams['x_offset'] = this.gaze_offsets[0];
+            hyperparams['y_offset'] = this.gaze_offsets[1];
+        }
         return {
           'id': this.id,
           'model_type': this.model_type,
@@ -349,7 +355,6 @@ class EasyReadingReasoner {
 
     /**
      * Update the model for an action taken by the user that was guessed incorrectly by the reasoner.
-     * This should speed up the convergence of the state-action value function towards the optimal one.
      */
     updateUntakenActionModel() {
         if (this.user_action) {
@@ -502,9 +507,30 @@ class EasyReadingReasoner {
     /**
      * Callback after an episode has ended
      */
-    episodeEnd() {
-
+    episodeEnd(saveToCloud=true) {
         console.log('Episode ended');
+        if (saveToCloud) {
+            this.sendSerializedModelToCloud();
+        }
+    }
+
+    sendSerializedModelToCloud() {
+        let this_reasoner = this;
+        if (this.serializeTimeout) {
+            clearTimeout(this.serializeTimeout);
+        }
+        this.serializeTimeout = setTimeout(async function () {
+            let model_str = await this_reasoner.serialize();
+            if (cloudWebSocket.isConnected) {
+                let msg = {
+                    type: 'persistReasoner',
+                    reasoner_data: model_str,
+                };
+                cloudWebSocket.sendMessage(JSON.stringify(msg));
+            } else {
+                console.log('Websocket to cloud not connected, can\'t persist model.');
+            }
+        }, 100);
     }
 
     /**
@@ -623,15 +649,14 @@ class QLearningReasoner extends EasyReadingReasoner {
     }
 
     load(id, hyperparams, params) {
-        super.load(hyperparams);
-        this.id = id;
+        super.load(id, hyperparams);
         this.model_type = 'q_learning';
         if (!this.q_func) {
             this.initQFunction();
         }
         // Copy reasoner state, if given
         if ('q_func' in params) {
-            this.q_func = params.q_func;
+            this.q_func.q = params.q_func;
         }
         if ('ucb' in params) {
             this.ucb = params.ucb;
@@ -696,7 +721,7 @@ class DoubleQLearningReasoner extends QLearningReasoner {
             this.initDoubleQFunction();
         }
         if ('q_func_b' in params) {
-            this.q_func_b = params.q_func_b;
+            this.q_func_b.q = params.q_func_b;
         }
     }
 
@@ -746,7 +771,7 @@ class ANNReasoner extends EasyReadingReasoner {
 
     load(id, hyperparams, params) {
         if ('n_features' in params) {
-            super.load(hyperparams);
+            super.load(id, hyperparams);
             this.id = id;
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));

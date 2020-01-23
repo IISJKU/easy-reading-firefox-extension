@@ -6,9 +6,9 @@ class EasyReadingReasonerFactory {
         let params = {};
         if ('model_type' in model_dict) {
             if ('hyperparams' in model_dict) {
-                hyperparams = model_dict.hyperparams;
+                hyperparams = JSON.parse(model_dict.hyperparams);
                 if ('params' in model_dict && !background_util.isEmptyObject(model_dict.params)) {
-                    params = model_dict.params;
+                    params = JSON.parse(model_dict.params);
                 }
             }
             let id = -1;
@@ -37,7 +37,7 @@ class EasyReadingReasonerFactory {
             model_type = '<empty>';
         }
         if (created) {
-            reasoner.load(id, params, hyperparams);
+            reasoner.load(id, hyperparams, params);
             return reasoner;
         } else {
             console.log('Could not create reasoner. Type ' + model_type + ' unknown.');
