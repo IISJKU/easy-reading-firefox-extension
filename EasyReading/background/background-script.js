@@ -122,11 +122,15 @@ var background = {
                 }
 
                 background.userLoggedIn = true;
+
+                //Todo HACK! Should update other open login pages. However this can lead to race condition with anonymous login when redirecting to wizard
                 //Update options pages that logging in was successfull
-                let activeOptionPages = background.getActiveOptionPages();
-                activeOptionPages.forEach((optionsPage) => {
-                    optionsPage.updateStatus();
-                });
+                setTimeout(async function () {
+                    let activeOptionPages = background.getActiveOptionPages();
+                    activeOptionPages.forEach((optionsPage) => {
+                        optionsPage.updateStatus();
+                    });
+                }, 300);
 
 
                 break;
