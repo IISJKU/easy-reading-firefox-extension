@@ -3,14 +3,19 @@
 var background = {
     errorMsg: null,
     uuid: null,
-   // authMethod: null,
+    // authMethod: null,
     config: null,
+    userLoggedIn: false,
     reasoner: null,
 
-    connectToCloud: function (config) {
+    connectToCloud: async function (config) {
 
-        cloudWebSocket.initWebSocket(config);
-        this.config = config;
+        if(cloudWebSocket.initWebSocket({...config})){
+            background.config = {...config};
+        }else{
+            await background.logoutUser("Could not connect to cloud server!");
+        }
+
     },
 
     onConnectedToCloud: function (event) {
@@ -70,7 +75,7 @@ var background = {
                 let configTabIds = [];
                 if (configTabs.length !== 0) {
                     configTabs.forEach((tab) => {
-               //         browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
+                        //         browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
                         configTabIds.push(tab.id);
                     });
                 }
@@ -88,8 +93,8 @@ var background = {
 
                     let tabs = await browser.tabs.query({});
 
-                    tabs.forEach(async (tab) => {
-
+                    for(let i=0; i < tabs.length; i++){
+                        let tab = tabs[i];
                         if (!easyReading.isIgnoredUrl(tab.url) && !tab.url.startsWith("about:")) {
 
                             if (tab.status === "complete") {
@@ -121,19 +126,29 @@ var background = {
                                 }
                             }
                         }
-
-
-                    });
+                    }
                 } catch (error) {
 
                 }
+
+                background.userLoggedIn = true;
 
                 if (!this.reasoner) {
                     background.requestReasoner();
                 } else {
                     if (trackingWebSocket.isReady())
-                    this.reasoner.active = true;
+                        this.reasoner.active = true;
                 }
+
+                //Todo HACK! Should update other open login pages. However this can lead to race condition with anonymous login when redirecting to wizard
+                //Update options pages that logging in was successfull
+                setTimeout(async function () {
+                    let activeOptionPages = background.getActiveOptionPages();
+                    activeOptionPages.forEach((optionsPage) => {
+                        optionsPage.updateStatus();
+                    });
+                }, 300);
+
 
                 break;
             case "userUpdateResult":
@@ -199,13 +214,10 @@ var background = {
                 }
 
 
-                // background.updateTabs();
 
                 break;
             case "cloudRequestResult":
                 portManager.getPort(receivedMessage.windowInfo.tabId).p.postMessage(receivedMessage);
-                // getPort(receivedMessage.windowInfo.windowId, receivedMessage.windowInfo.tabId).postMessage(receivedMessage);
-                // ports[receivedMessage.data.tab_id].postMessage(receivedMessage);
                 break;
             case "userLogout":
                 await background.logoutUser();
@@ -242,17 +254,13 @@ var background = {
                 background.persistReasoner();
                 break;
             case "recommendation":
-                console.log(receivedMessage);
-                browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                browser.tabs.query({active: true, currentWindow: true}, function (tabs) {
                     let currTab = tabs[0];
-                    if (currTab) { // Sanity check
-                        /* do stuff */
+                    if (currTab) {
                         let port = portManager.getPort(currTab.id);
-                        if(port){
+                        if (port) {
                             port.p.postMessage(receivedMessage);
                         }
-
-                        console.log(currTab);
                     }
                 });
                 break;
@@ -264,9 +272,18 @@ var background = {
 
     },
     onDisconnectFroCloud: async function (error) {
-        background.errorMsg = error;
-        if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
-            background.logoutUser(error);
+        await background.shutdownTabs();
+        if (background.userLoggedIn) {
+            background.connectToCloud(background.config);
+            background.reconnect = true;
+        } else {
+
+            background.errorMsg = error;
+            if (scriptManager.profileReceived || background.getActiveOptionsPage()) {
+                await background.logoutUser(error);
+            }
+
+            cloudWebSocket.reconnect();
         }
         trackingWebSocket.closeWebSocket();
     },
@@ -426,7 +443,7 @@ var background = {
         let tabs = await browser.tabs.query({});
 
         tabs.forEach((tab) => {
-            if (tab.url.indexOf("https://" + cloudWebSocket.config.url + "/client/") !== -1) {
+            if (tab.url.indexOf("https://" + cloudWebSocket.config.url) !== -1) {
                 configTabs.push(tab);
             } else if (tab.url.indexOf(backgroundUrl) !== -1) {
                 if (includeOptionsPage) {
@@ -438,6 +455,18 @@ var background = {
 
         return configTabs;
     },
+
+    reloadAllConfigurationTabs: async function () {
+        let tabs = await browser.tabs.query({});
+        tabs.forEach((tab) => {
+            if (tab.url.indexOf("https://" + cloudWebSocket.config.url) !== -1) {
+                browser.tabs.reload(tab.id);
+            }
+        });
+
+
+    },
+
     updateTabs: function () {
 
         browser.tabs.query({}, (tabs) => {
@@ -456,8 +485,42 @@ var background = {
     },
 
     logoutUser: async function (errorMsg) {
+        background.userLoggedIn = false;
         scriptManager.reset();
+        cloudWebSocket.closeWebSocket();
+        await background.shutdownTabs();
 
+        let configTabs = await background.getOpenConfigTabs();
+
+        if (configTabs.length > 0) {
+            //Close other tabs
+
+            for (let i = 1; i < configTabs.length; i++) {
+                await browser.tabs.remove(configTabs[i].id);
+            }
+
+            await browser.tabs.update(configTabs[0].id, {url: browser.extension.getURL('/background/config/config.html')});
+
+
+        }
+
+        let activeOptionPages = background.getActiveOptionPages();
+        activeOptionPages.forEach((optionsPage) => {
+            optionsPage.updateStatus(errorMsg);
+        });
+
+        if (configTabs.length === 0 && activeOptionPages.length === 0) {
+            browser.runtime.openOptionsPage();
+        }
+
+        setTimeout(async function () {
+            await background.reloadAllConfigurationTabs();
+        }, 300);
+
+
+    },
+
+    async shutdownTabs() {
         let m = {
             type: "userLogout",
             data: null,
@@ -479,20 +542,6 @@ var background = {
         });
 
         this.reasoner = null;
-
-        let configTabs = await background.getOpenConfigTabs();
-        configTabs.forEach(async (tab) => {
-            browser.tabs.update(tab.id, {url: browser.extension.getURL('/background/config/config.html')});
-        });
-
-        let activeOptionPages = background.getActiveOptionPages();
-        activeOptionPages.forEach((optionsPage) => {
-            optionsPage.updateStatus(errorMsg);
-        });
-
-        if (configTabs.length === 0 && activeOptionPages.length === 0) {
-            browser.runtime.openOptionsPage();
-        }
     },
 
     sendFeedbackToReasoner(feedback, wait=false) {
@@ -812,47 +861,22 @@ let tabUiConfigManager = {
 
 };
 
-/*cloudRequest
-
-function addPort(p) {
-    for (let i = 0; i < ports.length; i++) {
-        if (ports[i].sender.tab.id === p.sender.tab.id) {
-
-            ports[i] = p;
-            return;
-        }
-    }
-    ports.push(p);
-}
-
-function removePort(p) {
-
-    for (let i = 0; i < ports.length; i++) {
-        if (ports[i] === p) {
-            ports.splice(i, 1);
-            return;
-        }
-
-    }
-}
-
-function getPort(window_id, tab_id) {
-
-    for (let i = 0; i < ports.length; i++) {
-        if (ports[i].sender.tab.windowId === window_id && ports[i].sender.tab.id === tab_id) {
-            return ports[i];
-        }
-    }
-}
-*/
 
 browser.browserAction.onClicked.addListener(async () => {
 
     let configTabs = await background.getOpenConfigTabs(true);
-    if (configTabs.length !== 0) {
-        browser.tabs.update(configTabs[0].id, {active: true});
-    } else {
-        browser.runtime.openOptionsPage();
-    }
-});
+    if (configTabs.length > 0) {
+        for(let i=0; i < configTabs.length; i++){
 
+            if (configTabs[i].url.indexOf("https://" + cloudWebSocket.config.url+"/client") !== -1) {
+                browser.tabs.update(configTabs[i].id, {active: true});
+
+                return;
+
+            }
+        }
+    }
+
+    browser.runtime.openOptionsPage();
+
+});
