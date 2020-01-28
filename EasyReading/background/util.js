@@ -27,5 +27,11 @@ let background_util = {
         return is_t;
     },
 
+    getRandomInt: function(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min;
+    },
+
 };
 
