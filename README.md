@@ -1,17 +1,13 @@
-### Installation:
- Usage for the chrome extension: 
-    
-    1. Go to chrome://extensions/ 
+# Installation:
 
-    2. enable developer mode 
-    
-    3. load the folder 'EzReader' 
-    
-
-    4. How to use the client:
-
-    Click on Debug ==> pick the server you wish to use(production/debug/local)  ==> click apply changes ==> click Login on the popup
-
-
-     Important! the client doesn't automatically login. you need to click on Login on the popup. I can of course easily change that if that's inconvinent for someone.
-
+1. Download the repository and unzip it
+2. Open Firefox
+3. Open the url: about:debugging.
+4. Click on "This Firefox" in the left menu
+![Step 4](img/step1.png)
+5. Click on "Load temporary Add-on..."
+![Step 5](img/step2.png)
+6. Locate the manifest.json file in the EasyReading directory in the unzipped repository using the file dialog
+![Step 5](img/step3.png)
+7. The extension has been loaded successfully - click on of the login buttons to login, or on the cogwheel to change the cloud server. Latest features can always be found on the DEV-Server
+![Step 5](img/step4.png)
