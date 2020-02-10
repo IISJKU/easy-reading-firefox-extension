@@ -125,7 +125,6 @@ let contentScriptController = {
     },
     easyReadingUiUpdate:function (event){
         easyReading.busyAnimation.startAnimation();
-        console.log("HIII");
     },
     sendMessageToBackgroundScript: function(message) {
         this.portToBackGroundScript.postMessage(message);
