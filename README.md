@@ -1,6 +1,6 @@
 # Installation:
 
-1. Download the repository and unzip it
+1. Clone or download and unzip the repository 
 2. Open Firefox
 3. Open the url: about:debugging.
 4. Click on "This Firefox" in the left menu
