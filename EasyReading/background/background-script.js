@@ -250,8 +250,18 @@ var background = {
                     background.reasoner = EasyReadingReasonerFactory.loadReasoner(reasoner_data, activate);
                 }
                 break;
+            case "reasonerParams":
+                if (background.reasoner && receivedMessage.rid === background.reasoner.id) {
+                    background.reasoner.loadParams(JSON.parse(receivedMessage.params));
+                }
+                break;
             case "persistReasoner":
                 background.persistReasoner();
+                break;
+            case "setReasonerId":
+                if (background.reasoner) {
+                    background.reasoner.id = Number(receivedMessage.reasoner_id);
+                }
                 break;
             case "recommendation":
                 browser.tabs.query({active: true, currentWindow: true}, function (tabs) {
@@ -332,17 +342,33 @@ var background = {
         }
     },
 
+    /**
+     * Request the whole reasoner model the cloud
+     */
     requestReasoner() {
         cloudWebSocket.sendMessage(JSON.stringify({
             type: "loadReasoner",
         }));
     },
 
+    /**
+     * Request current model parameters to the cloud
+     */
+    requestParameters() {
+        if (this.reasoner !== null) {
+            cloudWebSocket.sendMessage(JSON.stringify({
+                type: "loadReasonerParams",
+                rid: this.reasoner.id,
+            }));
+        }
+    },
+
     persistReasoner() {
         if (background.reasoner) {
+            let serialized_reasoner = background.reasoner.serialize();
             cloudWebSocket.sendMessage(JSON.stringify({
                 type: "persistReasoner",
-                reasoner_data: background.reasoner.serialize(),
+                reasoner_data: serialized_reasoner,
             }));
         } else {
             console.log("Can't persist reasoner - it has not been loaded yet.");
@@ -354,12 +380,6 @@ var background = {
             return;
         }
         let this_reasoner = this.reasoner;
-        let pos_x = -1;
-        let pos_y = -1;
-        if (this.reasoner.gaze_info.length === 2) {
-            pos_x = this.reasoner.gaze_info[0];
-            pos_y = this.reasoner.gaze_info[1];
-        }
         switch (action) {
             case EasyReadingReasoner.A.askUser:
             case EasyReadingReasoner.A.showHelp:
@@ -368,6 +388,12 @@ var background = {
                 browser.tabs.query({active: true, currentWindow: true}).then((tabs) => {
                         let tab = tabs[0];
                         if (tab && !this_reasoner.isIgnoredUrl(tab.url)) {
+                            let pos_x = -1;
+                            let pos_y = -1;
+                            if (this.reasoner.gaze_info.length === 2) {
+                                pos_x = this.reasoner.gaze_info[0];
+                                pos_y = this.reasoner.gaze_info[1];
+                            }
                             let port = portManager.getPort(tab.id);
                             if (port) {
                                 if (action === EasyReadingReasoner.A.askUser) {
@@ -577,17 +603,8 @@ let n_lines = allLines.length;
 let i = 0;
 
 function timeout () {
-    setTimeout(function () {
-        let message = JSON.parse(allLines[i]);
-        if (message && background.reasoner && background.reasoner.active) {
-            let action = background.reasoner.step(message);
-            background.handleReasonerAction(action);
-            if (i < n_lines - 2) {
-                i += 1;
-            } else {
-                i = 0;
-            }
-        }
+    setTimeout(async function () {
+        await background.onMessageFromTracking(allLines[i]);
         if (i < n_lines - 2) {
             i += 1;
         } else {

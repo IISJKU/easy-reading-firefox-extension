@@ -28,8 +28,9 @@ class EasyReadingReasoner {
 
     // Internal parameters
     id = -1;
-    is_active = true;
-    is_paused = false;
+    pid = -1;  // User profile ID
+    is_active = true;  // Reasoner is disabled when tracking data not available e.g. AsTeRICS model not running
+    is_paused = false;  // Reasoner is paused while cloud processes a request
     user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
     reward = null;  // Reward obtained in current timestep
     s_curr = null;  // Current state (tensor)
@@ -79,9 +80,10 @@ class EasyReadingReasoner {
         this.gaze_offsets = [x_offset, y_offset];
     }
 
-    load(id, hyperparams) {
+    load(id, pid, hyperparams) {
         // Copy hyper-parameters to this reasoner
         this.id = id;
+        this.pid = pid;
         let this_reasoner = this;
         Object.keys(hyperparams).forEach(function(key) {
             if (this_reasoner.hasOwnProperty(key)) {
@@ -94,7 +96,13 @@ class EasyReadingReasoner {
         this.model = null;
     }
 
-    async to_dict() {
+    loadParams(params) {
+        if ('model' in params) {
+            this.model = params.model;
+        }
+    }
+
+    async to_dict(include_params=true) {
         let hyperparams = {
             'alpha' : this.alpha,
             'gamma': this.gamma,
@@ -106,12 +114,16 @@ class EasyReadingReasoner {
             hyperparams['x_offset'] = this.gaze_offsets[0];
             hyperparams['y_offset'] = this.gaze_offsets[1];
         }
-        return {
-          'id': this.id,
-          'model_type': this.model_type,
-          'hyperparams' : hyperparams,
-          'params' : {},
+        let dict_out = {
+            'id': this.id,
+            'pid': this.pid,
+            'model_type': this.model_type,
+            'hyperparams' : hyperparams,
         };
+        if (include_params) {
+            dict_out['params'] = {};
+        }
+        return dict_out;
     }
 
     async serialize() {
@@ -510,20 +522,45 @@ class EasyReadingReasoner {
     episodeEnd(saveToCloud=true) {
         console.log('Episode ended');
         if (saveToCloud) {
-            this.sendSerializedModelToCloud();
+            if (this.id < 0) {
+                this.sendSerializedModelToCloud('all');
+            } else {
+                this.sendSerializedModelToCloud('params');
+            }
         }
     }
 
-    sendSerializedModelToCloud() {
+    /**
+     * Serialize reasoner model (or its parameters) and send to cloud
+     * @param what: what to serialize: only the model and its hyperparameters ('model'), only the current model's
+     * parameters ('params'), or everything ('all')
+     */
+    sendSerializedModelToCloud(what='all') {
         let this_reasoner = this;
         if (this.serializeTimeout) {
             clearTimeout(this.serializeTimeout);
         }
         this.serializeTimeout = setTimeout(async function () {
-            let model_str = await this_reasoner.serialize();
+            let model_str = '';
+            let model_dict = null;
+            let msg_type = 'persistReasoner';
+            if (what === 'params') {
+                msg_type = 'persistReasonerParams';
+                model_dict = await this_reasoner.to_dict();
+                let params_dict = {
+                    'params': model_dict['params'],
+                    'rid': this_reasoner.id,
+                };
+                model_str = JSON.stringify(params_dict);
+            } else if(what === 'model') {
+                model_dict = await this_reasoner.to_dict(false);
+                model_str = JSON.stringify(model_dict);
+            } else {
+                model_str = await this_reasoner.serialize();
+            }
             if (cloudWebSocket.isConnected) {
                 let msg = {
-                    type: 'persistReasoner',
+                    type: msg_type,
                     reasoner_data: model_str,
                 };
                 cloudWebSocket.sendMessage(JSON.stringify(msg));
@@ -648,15 +685,22 @@ class QLearningReasoner extends EasyReadingReasoner {
         this.resetStatus();
     }
 
-    load(id, hyperparams, params) {
-        super.load(id, hyperparams);
+    load(id, pid, hyperparams, params=null) {
+        super.load(id, pid, hyperparams);
         this.model_type = 'q_learning';
         if (!this.q_func) {
             this.initQFunction();
         }
         // Copy reasoner state, if given
+        if (params !== null) {
+            this.loadParams(params);
+        }
+    }
+
+    loadParams(params) {
+        super.loadParams(params);
         if ('q_func' in params) {
-            this.q_func.q = params.q_func;
+            this.q_func.load(params.q_func);
         }
         if ('ucb' in params) {
             this.ucb = params.ucb;
@@ -664,12 +708,14 @@ class QLearningReasoner extends EasyReadingReasoner {
         }
     }
 
-    async to_dict() {
-        let this_dict = await super.to_dict();
-        this_dict['params'] = {
-            'ucb': this.ucb,
-            'q_func': this.q_func,
-        };
+    async to_dict(include_params=true) {
+        let this_dict = await super.to_dict(include_params);
+        if (include_params) {
+            this_dict['params'] = {
+                'ucb': this.ucb,
+                'q_func': this.q_func,
+            };
+        }
         return this_dict;
     }
 
@@ -682,7 +728,7 @@ class QLearningReasoner extends EasyReadingReasoner {
     }
 
     bestAction() {
-        return this.q_func.epsGreedyAction(this.s_curr, this.eps, this.t_current);
+        return this.q_func.epsGreedyAction(this.s_curr, this.eps, this.t_current, !this.is_paused);
     }
 
     updateStep(action, reward) {
@@ -714,25 +760,32 @@ class DoubleQLearningReasoner extends QLearningReasoner {
         console.log('Double Q function initialized');
     }
 
-    load(id, hyperparams, params) {
-        super.load(id, hyperparams, params);
+    load(id, pid, hyperparams, params) {
+        super.load(id, pid, hyperparams, params);
         this.model_type = 'double_q_learning';
         if (!this.q_func_b || !this.q_func) {
             this.initDoubleQFunction();
         }
+        this.loadParams(params);
+    }
+
+    loadParams(params) {
+        super.loadParams(params);
         if ('q_func_b' in params) {
             this.q_func_b.q = params.q_func_b;
         }
     }
 
-    async to_dict() {
-        let this_dict = await super.to_dict();
-        this_dict['params']['q_func_b'] = this.q_func_b;
+    async to_dict(include_params=true) {
+        let this_dict = await super.to_dict(include_params);
+        if (include_params) {
+            this_dict['params']['q_func_b'] = this.q_func_b;
+        }
         return this_dict;
     }
 
     bestAction() {
-        return this.q_func.epsGreedyCombinedAction(this.s_curr, this.eps, this.q_func_b, this.t_current);
+        return this.q_func.epsGreedyCombinedAction(this.s_curr, this.eps, this.q_func_b, this.t_current, !this.is_paused);
     }
 
     updateStep(action, reward) {
@@ -747,13 +800,13 @@ class DoubleQLearningReasoner extends QLearningReasoner {
             if (to_update === 'a') {
                 q_target = reward +
                     this.gamma * this.q_func_b.retrieve(this.s_next,
-                        this.q_func.greedyAction(this.s_next, this.t_current));
+                        this.q_func.greedyAction(this.s_next, this.t_current, false));
                 new_q_value = this.alpha * (q_target - this.q_func.retrieve(this.s_curr, action));
                 this.q_func.update(this.s_curr, action, new_q_value);
             } else {
                 q_target = reward +
                     this.gamma * this.q_func.retrieve(this.s_next,
-                        this.q_func_b.greedyAction(this.s_next, this.t_current));
+                        this.q_func_b.greedyAction(this.s_next, this.t_current, false));
                 new_q_value = this.alpha * (q_target - this.q_func_b.retrieve(this.s_curr, action));
                 this.q_func_b.update(this.s_curr, action, new_q_value);
             }
@@ -769,10 +822,9 @@ class ANNReasoner extends EasyReadingReasoner {
         this.model_type = 'rnn';
     }
 
-    load(id, hyperparams, params) {
+    load(id, pid, hyperparams, params) {
         if ('n_features' in params) {
-            super.load(id, hyperparams);
-            this.id = id;
+            super.load(id, pid, hyperparams);
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));
             this.model.add(tf.layers.dense({units: 32, activation: 'tanh', inputShape: [params.n_features]}));
@@ -788,7 +840,7 @@ class ANNReasoner extends EasyReadingReasoner {
         return this.model.predict(this.s_curr);
     }
 
-    async to_dict() {
+    async to_dict(include_params=true) {
         return await this.model.save(tf.io.withSaveHandler(async modelArtifacts => modelArtifacts));
     }
 

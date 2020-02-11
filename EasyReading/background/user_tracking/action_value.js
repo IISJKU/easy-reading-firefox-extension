@@ -38,7 +38,7 @@ class ActionValueFunction {
     }
 
     retrieveGreedy(state, t) {
-        let action = this.greedyAction(state, t);
+        let action = this.greedyAction(state, t, false);
         return this.retrieve(state, action);
     }
 
@@ -47,9 +47,10 @@ class ActionValueFunction {
      * @param state; State for which to return best action
      * @param q_b; ActionValueFunction instance for second action-value function
      * @param t int: Agent's current time step
+     * @param increase_counter boolean: whether the action counter needs to be increased
      * @returns string; Action yielding the best expected future return starting from S
      */
-    greedyCombinedAction(state, q_b, t) {
+    greedyCombinedAction(state, q_b, t, increase_counter) {
         let chosen_a = null;
         if (state) {
             let state_data = background_util.getStateRepresentation(state);
@@ -90,9 +91,11 @@ class ActionValueFunction {
             }
         }
         if (chosen_a === null) {
-            chosen_a = this.getRandomAction();
+            chosen_a = this.getRandomAction(increase_counter);
         }
-        this.count_actions[chosen_a]++;
+        if (increase_counter) {
+            this.count_actions[chosen_a]++;
+        }
         return chosen_a;
     }
 
@@ -100,10 +103,11 @@ class ActionValueFunction {
      * Greedy Q-learning: Given S, return A <- argmax_a(Q(S,a))
      * @param state; State for which to return best action
      * @param t int: Agent's current time step
+     * @param increase_counter boolean: whether the action counter needs to be increased
      * @returns string; Action yielding the best expected future return starting from S
      */
-    greedyAction(state, t) {
-        return this.greedyCombinedAction(state, null, t);
+    greedyAction(state, t, increase_counter) {
+        return this.greedyCombinedAction(state, null, t, increase_counter);
     }
 
     /**
@@ -111,10 +115,11 @@ class ActionValueFunction {
      * @param state; State for which to return best action
      * @param eps; Probability of exploring a random action instead of acting greedily
      * @param t int: Agent's current time step
+     * @param increase_counter boolean: whether the action counter needs to be increased
      * @returns string; Action yielding the best expected future return starting from S (or random action)
      */
-    epsGreedyAction(state, eps, t) {
-        return this.epsGreedyCombinedAction(state, eps, null, t);
+    epsGreedyAction(state, eps, t, increase_counter) {
+        return this.epsGreedyCombinedAction(state, eps, null, t, increase_counter);
     }
 
     /**
@@ -124,13 +129,14 @@ class ActionValueFunction {
      * @param eps; Probability of exploring a random action instead of acting greedily
      * @param q_b; ActionValueFunction instance for second action-value function
      * @param t int: Agent's current time step
+     * @param increase_counter boolean: whether the action counter needs to be increased
      * @returns string; Action yielding the best expected future return starting from S (or random action)
      */
-    epsGreedyCombinedAction(state, eps, q_b, t) {
+    epsGreedyCombinedAction(state, eps, q_b, t, increase_counter) {
         if (eps > 0.01 && Math.random() <= eps) {
-            return this.getRandomAction();
+            return this.getRandomAction(increase_counter);
         }
-        return this.greedyCombinedAction(state, q_b, t);
+        return this.greedyCombinedAction(state, q_b, t, increase_counter);
     }
 
     /**
@@ -180,28 +186,74 @@ class ActionValueFunction {
         return 0.0;
     }
 
-    getRandomAction() {
+    getRandomAction(increase_counter) {
         let a = null;
         if (this.preferred_actions.length) {
             a = this.preferred_actions[0];
         } else {
             a =  this.actions[this.getRandomActionIndex()];
         }
-        this.count_actions[a]++;
+        if (increase_counter) {
+            this.count_actions[a]++;
+        }
         return a;
     }
 
     serialize() {
-        return JSON.stringify(this.q);
+        return JSON.stringify({
+            'q' : this.q,
+            'actions': this.actions,
+            'preferred_actions': this.preferred_actions,
+            'count_actions': this.count_actions,
+            'ucb_c': this.ucb_c,
+        });
     }
 
     load(serialized_q) {
         if (serialized_q && !background_util.isEmptyObject(serialized_q)) {
-            this.q = JSON.parse(serialized_q);
+            if ('q' in serialized_q) {
+                if (background_util.isObject(serialized_q.q)) {
+                    this.q = serialized_q.q;
+                } else if (typeof serialized_q.q === "string") {
+                    this.q = JSON.parse(serialized_q.q);
+                } else {
+                    console.log("Unknown q function given to Action-Value function");
+                }
+            }
+            if ('actions' in serialized_q) {
+                if (typeof serialized_q.actions === "string") {
+                    this.actions = JSON.parse(serialized_q.actions);
+                } else if (Array.isArray(serialized_q.actions)){
+                    this.actions = serialized_q.actions;
+                } else {
+                    console.log("Unknown actions given to Action-Value function");
+                }
+            }
+            this.n_actions = this.n_actions.length;
+            if ('preferred_actions' in serialized_q) {
+                if (typeof serialized_q.preferred_actions === "string") {
+                    this.preferred_actions = JSON.parse(serialized_q.preferred_actions);
+                } else if (Array.isArray(serialized_q.preferred_actions)){
+                    this.preferred_actions = serialized_q.preferred_actions;
+                } else {
+                    console.log("Unknown preferred actions given to Action-Value function");
+                }
+            }
+            if ('count_actions' in serialized_q) {
+                if (background_util.isObject(serialized_q.count_actions)) {
+                    this.count_actions = serialized_q.count_actions;
+                } else if (typeof serialized_q.count_actions === "string") {
+                    this.count_actions = JSON.parse(serialized_q.count_actions);
+                } else {
+                    console.log("Unknown action counts given to Action-Value function");
+                }
+            }
+            if ('ucb_c' in serialized_q) {
+                this.ucb_c = Number(serialized_q.ucb_c);
+            }
         } else {
             this.q = {};
         }
-
     }
 
     getRandomActionIndex() {

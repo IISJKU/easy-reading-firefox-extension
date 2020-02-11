@@ -283,7 +283,6 @@ let util ={
                 let ui = easyReading.userInterfaces[i];
                 for (let j=0; j<ui.tools.length; j++) {
                     let tool = ui.tools[j];
-                    console.log(tool);
                     if ('presentation' in tool && tool.presentation) {
                         let p = tool.presentation;
                         if ('instantDisplay' in p && !p.instantDisplay) {

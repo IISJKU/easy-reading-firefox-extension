@@ -1,4 +1,9 @@
 let background_util = {
+
+    isObject: function(thing) {
+      return thing !== null && typeof thing === 'object';
+    },
+
     isEmptyObject: function(obj) {
         let name;
         for (name in obj) {
