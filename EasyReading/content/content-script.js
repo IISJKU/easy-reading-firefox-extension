@@ -3,6 +3,7 @@ let contentScriptController = {
     profileReceived: false,
     init: function () {
 
+        document.addEventListener('easyReadingUpdate', contentScriptController.easyReadingUiUpdate);
         //listens to messages from the background script
         this.portToBackGroundScript = browser.runtime.connect({name: "port-to-bgs"});
         this.portToBackGroundScript.onMessage.addListener(function (m) {
@@ -48,8 +49,7 @@ let contentScriptController = {
                     this.initDebugMode(injection);
                 }else{
                     $(document).ready(function () {
-                        document.removeEventListener('easyReadingUpdate', contentScriptController.easyReadingUiUpdate);
-                        document.addEventListener('easyReadingUpdate', contentScriptController.easyReadingUiUpdate);
+
                         if(easyReading.busyAnimation){
                             easyReading.busyAnimation.stopAnimation();
                         }
@@ -80,8 +80,6 @@ let contentScriptController = {
                     $(document).ready(function () {
                         if (typeof easyReading !== 'undefined') {
                             console.log("starting up updated");
-                            document.removeEventListener('easyReadingUpdate', contentScriptController.easyReadingUiUpdate);
-                            document.addEventListener('easyReadingUpdate', contentScriptController.easyReadingUiUpdate);
                             if(easyReading.busyAnimation){
                                 easyReading.busyAnimation.stopAnimation();
                             }
