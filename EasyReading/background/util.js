@@ -38,5 +38,9 @@ let background_util = {
         return Math.floor(Math.random() * (max - min)) + min;
     },
 
+    reasonerIsActive() {
+        return background.reasoner && background.reasoner.active;
+    }
+
 };
 

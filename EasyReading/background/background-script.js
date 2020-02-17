@@ -42,9 +42,6 @@ var background = {
         if (optionsPage) {
             optionsPage.updateStatus();
         }
-
-        trackingWebSocket.initWebSocket();
-
     },
 
     onConnectedToTracking: function (event) {
@@ -248,6 +245,7 @@ var background = {
                 if (reasoner_data) {
                     let activate = trackingWebSocket.isReady();
                     background.reasoner = EasyReadingReasonerFactory.loadReasoner(reasoner_data, activate);
+                    trackingWebSocket.initWebSocket();
                 }
                 break;
             case "reasonerParams":
@@ -262,6 +260,9 @@ var background = {
                 if (background.reasoner) {
                     background.reasoner.id = Number(receivedMessage.reasoner_id);
                 }
+                break;
+            case "disableReasoner":
+                background.reasoner = null;  // Manually disabled by user, remove completely
                 break;
             case "recommendation":
                 browser.tabs.query({active: true, currentWindow: true}, function (tabs) {
@@ -306,7 +307,7 @@ var background = {
     },
 
     onMessageFromTracking: async function (json_msg) {
-        if (json_msg && this.reasoner && this.reasoner.active) {
+        if (json_msg && background_util.reasonerIsActive()) {
             let this_reasoner = this.reasoner;
             let bg = this;
             let system_tab = true;
@@ -571,7 +572,7 @@ var background = {
     },
 
     sendFeedbackToReasoner(feedback, wait=false) {
-        if (this.reasoner.active) {
+        if (background_util.reasonerIsActive()) {
             this.reasoner.user_action = feedback;
             this.reasoner.setHumanFeedback(feedback);
             background.reasoner.unfreeze();
@@ -677,7 +678,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     portInfo.startUpComplete = true;
                     console.log(p.sender.tab.id);
                     console.log("startup complete");
-                    if (background.reasoner && background.reasoner.active) {
+                    if (background_util.reasonerIsActive()) {
                         console.log("startUpComplete reset");
                         background.reasoner.resetStatus();
                     }
@@ -714,7 +715,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "toolTriggered":
-                    if (background.reasoner && background.reasoner.active) {
+                    if (background_util.reasonerIsActive()) {
                         background.reasoner.handleToolTriggered(m.wait);
                         currentPort.postMessage({
                             type: "closeDialogs",
@@ -734,7 +735,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     background.sendFeedbackToReasoner("ok");
                     break;
                 case "helpComplete":
-                    if (background.reasoner.active) {
+                    if (background_util.reasonerIsActive()) {
                         background.reasoner.unfreeze();
                         background.reasoner.setHelpDoneFeedback();
                         currentPort.postMessage({
@@ -744,7 +745,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "helpCancelled":
-                    if (background.reasoner.active) {
+                    if (background_util.reasonerIsActive()) {
                         console.log('Presentation cancelled; trying to update model.');
                         background.reasoner.unfreeze();
                         background.reasoner.setHelpCanceledFeedback();
@@ -754,7 +755,7 @@ browser.runtime.onConnect.addListener(function (p) {
                     }
                     break;
                 case "resetReasoner":
-                    if (background.reasoner) {
+                    if (background_util.reasonerIsActive()) {
                         background.reasoner.resetStatus();
                     }
                     break;

@@ -203,7 +203,6 @@ let contentScriptController = {
                     recommendationDialog.showDialogForRecommendation(m.data);
                 }
             }
-
         }
     },
     easyReadingUiUpdate:function (event){

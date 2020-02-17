@@ -50,7 +50,7 @@ class EasyReadingReasoner {
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
     UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
-    BUFFER_SIZE = 5;
+    BUFFER_SIZE = 10;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
     gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
