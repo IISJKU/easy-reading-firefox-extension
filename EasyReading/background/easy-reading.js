@@ -16,7 +16,7 @@ var easyReading = {
         ],
         ignoredConfigSites: [
             "/client/function-editor",
-            "/client/setup",
+           // "/client/setup",
         ],
 
         init: function () {

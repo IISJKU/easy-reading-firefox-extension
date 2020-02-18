@@ -9,57 +9,141 @@
     <script src="js/aria.toggle.js"></script>
     <script src="js/tab.focus.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/audio.js"></script>
 
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
     <link href="css/foundation.css" rel="stylesheet"/>
-    <link href="css/config.css" rel="stylesheet"/>
+ <!--   <link href="css/config.css" rel="stylesheet"/>-->
+    <link href="css/client-profile-setup.css" rel="stylesheet"/>
 </head>
 <body>
 
 
-<div id="infoContainer">
 
-    <div id="connectionInfo"></div>
-    <hr>
+<audio src="audio/test.mp3" id="myAudio"></audio>
+<div class="row-header row">
+    <div class="medium-12 columns">
+
+        <header id="header">
+            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+                    src="img/text-to-speech.png">
+            </button>
+            <h1 class="heading1">Vielen Dank, dass Sie Easy Reading installiert haben.
+            </h1>
+            <div class="logo"><img src="img/logo.png" alt="EasyReading Logo" class="logo"></div>
+
+        </header>
+        <hr class="header-hr">
+    </div>
 </div>
 
-<div class="row wrapper">
-    <div class="column medium-12 align-center" style="text-align: center">
-        <img id="er-logo" src="img/logo.png" alt="Easy Reading logo">
-        <h1><span class="fa fa-lock"></span><span id="loginMessage">Easy Reading Login</span></h1>
-        <div id="loginDescription">Login or Register with:</div>
-        <ul class="no-bullet">
-            <li>
-                <div id="gSignInWrapper">
-                    <button id="googleSignInButton" class="customGPlusSignIn">
-                        <span class="icon"></span>
-                        <span class="buttonText" id="loginGoogle">Google</span>
-                    </button>
-                </div>
-            </li>
-            <li>
+<main>
 
-                <div id="fbSignInButton" class="login-button" role="button" tabindex="0">
-                    <div class="login-facebook-icon">f</div>
-                    <div class="login-facebook-text" id="loginFacebook">Continue with Facebook</div>
-                </div>
-            </li>
-            <li>
 
-                <button id="anonymLogin">
-                    Anonymous login
-                </button>
-            </li>
-        </ul>
+    <div class="row">
+        <h2>  Wie möchten Sie sich anmelden?</h2>
+    </div>
+    <div class="row">
 
-        <hr>
-        <button id="toogleSetting" ><img src="img/settings.png" alt="Settings"></button>
-        <div id="cloudServerSelect">
 
+        <div class="columns small-4 large-4">
+
+            <button id="googleSignInButton" class="widget">
+              <span class="customGPlusSignIn">
+                <span class="icon"><img src="img/google.png"></span>
+                <span class="buttonText" id="loginGoogle">mit Google</span>
+              </span>
+            </button>
+        </div>
+        <div class="columns small-1 large-1 tts-column">
+            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+                    src="img/text-to-speech.png">
+            </button>
+        </div>
+        <div class="columns small-7 large-7">
+            <p id="p1" data-audio-src="audio/test.mp3">
+                Haben Sie ein Google-Konto?<br>
+                Dann können Sie es benutzen.
+            </p>
+            <p>
+                Ihre Zugangsdaten und Ihre Einstellungen bleiben gespeichert.<br>
+                Auch dann, wenn Sie Ihr Gerät herunter fahren und neu starten.
+            </p>
+        </div>
+    </div>
+    <div class="row">
+
+        <div class="columns small-4 large-4">
+
+            <button id="fbSignInButton"  class="widget">
+                <span>
+                <span class="icon"><img src="img/fb_icon.png"></span>
+                <span class="buttonText" id="loginFacebook">mit Facebook</span>
+              </span>
+            </button>
+        </div>
+        <div class="columns small-1 large-1 tts-column">
+            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+                    src="img/text-to-speech.png">
+            </button>
+        </div>
+        <div class="columns small-7 large-7">
+            <p id="p1" data-audio-src="audio/test.mp3">
+                Haben Sie ein Facebook-Konto?<br>
+                Dann können Sie es benutzen.
+            </p>
+            <p>
+                Ihre Zugangsdaten und Ihre Einstellungen bleiben gespeichert.<br>
+                Auch dann, wenn Sie Ihr Gerät herunter fahren und neu starten.
+
+            </p>
         </div>
     </div>
 
-</div>
 
+    <div class="row">
+
+        <div class="columns small-4 large-4">
+
+            <button id="anonymLogin"  class="widget">
+
+                <span class="icon"><img src="img/anonymous.png"></span>
+                <span class="buttonText" id="anonym">Anonym</span>
+            </button>
+        </div>
+        <div class="columns small-1 large-1 tts-column">
+            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+                    src="img/text-to-speech.png">
+            </button>
+        </div>
+        <div class="columns small-7 large-7">
+            <p id="p1" data-audio-src="audio/test.mp3">
+                Sie möchten lieber unerkannt bleiben?<br>
+                Dann können Sie sich anonym anmelden.
+            </p>
+            <p>
+                Ihre Daten und Einstellungen werden nicht gespeichert.<br>
+                Alle Einstellungen gehen verloren, wenn Sie Ihr Gerät neu starten.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div id="infoContainer">
+
+            <hr>
+            <div id="connectionInfo"></div>
+
+        </div>
+
+        <button id="toogleSetting"><img src="img/settings.png" alt="Settings"></button>
+        <div id="cloudServerSelect">
+    </div>
+
+    </div>
+
+
+</main>
 </body>
 </html>

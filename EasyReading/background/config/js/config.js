@@ -2,12 +2,15 @@ var isEasyReadingConfigPage = true;
 
 $(document).ready(function () {
 
+    /*
     $('#loginMessage').html(browser.i18n.getMessage("loginMessage"));
     $('#loginDescription').html(browser.i18n.getMessage("loginDescription"));
     $('#loginGoogle').html(browser.i18n.getMessage("loginGoogle"));
     $('#loginFacebook').html(browser.i18n.getMessage("loginFacebook"));
     $('#anonymLogin').html(browser.i18n.getMessage("loginAnonym"));
 
+
+     */
     let backgroundPage = browser.extension.getBackgroundPage();
     let easyReadingConfig = backgroundPage.easyReading.config;
     let selectEndpointURLFieldSetHTML = '<fieldset class="cloudServerSelect">\n' +
@@ -47,6 +50,9 @@ $(document).ready(function () {
     });
 
     $("#fbSignInButton").click(function () {
+
+        var x = document.getElementById("myAudio");
+        x.play();
 
         if(backgroundPage.background.userLoggedIn){
             updateStatus();
