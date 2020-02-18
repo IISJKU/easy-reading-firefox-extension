@@ -759,6 +759,16 @@ browser.runtime.onConnect.addListener(function (p) {
                         background.reasoner.resetStatus();
                     }
                     break;
+                case "freezeReasoner":
+                    if (background_util.reasonerIsActive()) {
+                        background.reasoner.freeze();
+                    }
+                    break;
+                case "unfreezeReasoner":
+                    if (background_util.reasonerIsActive()) {
+                        background.reasoner.unfreeze();
+                    }
+                    break;
             }
         });
 

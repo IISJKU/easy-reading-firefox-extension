@@ -44,10 +44,9 @@ class EasyReadingReasoner {
     feature_names = [];
     cancel_unfreeze = false;
     freeze_start = null;
-    serializeTimeout = null;
 
     // Tracking parameters
-    IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
+    IDLE_TIME = 30000;  // User idle time (ms) before inferring user reward
     NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
     UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
     BUFFER_BEFORE_SIZE = 5;
@@ -57,6 +56,13 @@ class EasyReadingReasoner {
     gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
     gaze_offsets = [];  // User's gaze offsets for x and y coordinates from screen origin to viewport origin
     stored_feedback = null;
+
+    // Timeouts
+    unfreezeTimeout = null;
+    serializeTimeout = null;
+    waitUserReactionTimeout = null;
+    waitForFeedbackTimeout = null;
+    collectNextStateTimeout = null;
 
     /**
      * Action set
@@ -148,6 +154,7 @@ class EasyReadingReasoner {
         this.stored_feedback = null;
         this.unfreeze(false);
         this.waiting_start = null;
+        this.clearTimeouts();
         // If there are any dialogs still open anywhere, close them
         for (let i=0; i<portManager.ports.length; i++) {
             portManager.ports[i].p.postMessage({
@@ -155,6 +162,14 @@ class EasyReadingReasoner {
             });
         }
         console.log("Reasoner status reset. Collecting new user state");
+    }
+
+    clearTimeouts() {
+        clearTimeout(this.unfreezeTimeout);
+        clearTimeout(this.serializeTimeout);
+        clearTimeout(this.waitUserReactionTimeout);
+        clearTimeout(this.waitForFeedbackTimeout);
+        clearTimeout(this.collectNextStateTimeout);
     }
 
     /**
@@ -241,7 +256,7 @@ class EasyReadingReasoner {
         console.log("Collecting next state (waiting for user's reaction)");
         let this_reasoner = this;
         function timeout () {
-            setTimeout(function () {
+            this_reasoner.waitUserReactionTimeout = setTimeout(function () {
                 if (this_reasoner.waiting_feedback) {
                     let end = performance.now();
                     if (!this_reasoner.is_paused && end - this_reasoner.waiting_start >= this_reasoner.IDLE_TIME) {
@@ -271,12 +286,18 @@ class EasyReadingReasoner {
         let start = performance.now();
         this_reasoner.user_action = 'ok';
         function timeout () {
-            setTimeout(function () {
+            if (this_reasoner.waitForFeedbackTimeout) {
+                clearTimeout(this_reasoner.waitForFeedbackTimeout);
+            }
+            this_reasoner.waitForFeedbackTimeout = setTimeout(function () {
                 if (this_reasoner.waiting_feedback) {
                     let end = performance.now();
                     if (!this_reasoner.is_paused && end - start >= this_reasoner.IDLE_TIME) {
                         this_reasoner.user_action = 'help';  // User did not cancel help after IDLE_TIME, it was needed
                     } else {
+                        if (this_reasoner.is_paused) {
+                            start = performance.now();
+                        }
                         timeout();
                     }
                 }
@@ -452,7 +473,7 @@ class EasyReadingReasoner {
         let start = performance.now();
         function waitBeforeUpdate () {
             console.log('Setting timeout for S_next collection');
-            setTimeout(function () {
+            this_reasoner.collectNextStateTimeout = setTimeout(function () {
                 let end = performance.now();
                 if (end - start >= this_reasoner.NEXT_STATE_TIME) {
                     console.log('Timeout; S_next collected. Updating model');
@@ -463,6 +484,9 @@ class EasyReadingReasoner {
             }, 500);
         }
         if (this.collect_t === 'after') {
+            if (this_reasoner.collectNextStateTimeout) {
+                clearTimeout(this_reasoner.collectNextStateTimeout);
+            }
             waitBeforeUpdate();
         } else {
             this.resetStatus();  // This should never happen
@@ -475,7 +499,7 @@ class EasyReadingReasoner {
         this.is_paused = true;
         let this_reasoner = this;
         function selfUnfreeze () {
-            setTimeout(function () {
+            this_reasoner.unfreezeTimeout = setTimeout(function () {
                 let end = performance.now();
                 if (!this_reasoner.cancel_unfreeze) {
                     if (end - this_reasoner.freeze_start >= this_reasoner.UNFREEZE_TIME) {
@@ -506,6 +530,7 @@ class EasyReadingReasoner {
         this.is_paused = false;
         if (this.freeze_start !== null) {
             this.cancel_unfreeze = true;
+            clearTimeout(this.unfreezeTimeout);
         }
         this.freeze_start = null;
         if (this.waiting_start !== null) {
