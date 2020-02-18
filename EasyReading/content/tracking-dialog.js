@@ -169,6 +169,10 @@ let confirm_dialog = {
                     }
                     if (widget) {
                         widget.deactivateWidget();
+                        let presentation = widget.getPresentation();
+                        if (presentation) {
+                            presentation.removeLastResult();
+                        }
                     } else {
                         console.log('Confirm Dialog error: widget could not be located');
                         contentScriptController.portToBackGroundScript.postMessage({type: "resetReasoner"});

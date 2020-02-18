@@ -714,7 +714,7 @@ browser.runtime.onConnect.addListener(function (p) {
                         console.log('Websocket to cloud not connected, can\'t help user');
                     }
                     break;
-                case "toolTriggered":
+                case "toolTriggeredByUser":
                     if (background_util.reasonerIsActive()) {
                         background.reasoner.handleToolTriggered(m.wait);
                         currentPort.postMessage({

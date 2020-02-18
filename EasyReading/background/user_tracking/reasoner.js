@@ -50,7 +50,8 @@ class EasyReadingReasoner {
     IDLE_TIME = 10000;  // User idle time (ms) before inferring user reward
     NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
     UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
-    BUFFER_SIZE = 10;
+    BUFFER_BEFORE_SIZE = 5;
+    BUFFER_AFTER_SIZE = 5;
     s_buffer = [];  // Buffer of states before feedback
     s_next_buffer = [];  // Buffer of states after feedback
     gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
@@ -181,7 +182,7 @@ class EasyReadingReasoner {
         // Push sample to corresponding buffer
         if (this.collect_t === 'before') {
             let n = this.s_buffer.push(features);
-            if (n > this.BUFFER_SIZE) {
+            if (n > this.BUFFER_BEFORE_SIZE) {
                 this.s_buffer.shift();
             }
             if (!this.waiting_feedback) {
@@ -193,7 +194,7 @@ class EasyReadingReasoner {
             }
         } else {  // Collecting next state; take no action
             let n = this.s_next_buffer.push(features);
-            if (n > this.BUFFER_SIZE) {
+            if (n > this.BUFFER_AFTER_SIZE) {
                 this.s_next_buffer.shift();
             }
         }

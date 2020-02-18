@@ -169,17 +169,33 @@ let contentScriptController = {
                 } catch (error) {
                     console.log('triggerRequest error:' + error);
                 } finally {
+                    let target = null;
                     if (can_trigger) {
-                        let target = document.elementFromPoint(m.x, m.y);
-                        pageUtils.removeDisplayUnderPosition(m.x, m.y);
-                        tool.widget.activateWidget();
-                        globalEventListener.paragraphClickListener({
-                            target: target,
-                            clientX: m.x,
-                            clientY: m.y,
-                            user_triggered: false,
-                            reasoner_triggered: reasoner_triggered,
-                        });
+                        target = document.elementFromPoint(m.x, m.y);
+                        if (globalEventListener.isIgnoredElement(target)) {
+                            can_trigger = false;
+                        }
+                    }
+                    if (can_trigger) {
+                        let t_ms = 5;
+                        let er_tab_slide = $('#er-tab-slide-out');
+                        if (er_tab_slide.length) {
+                            if (er_tab_slide.hasClass("er-tab-in")) {
+                                t_ms = 500;
+                                $("#er-tab-slide-out-handle").click();
+                            }
+                        }
+                        setTimeout(function() {
+                            pageUtils.removeDisplayUnderPosition(m.x, m.y);
+                            tool.widget.activateWidget();
+                            globalEventListener.paragraphClickListener({
+                                target: target,
+                                clientX: m.x,
+                                clientY: m.y,
+                                user_triggered: false,
+                                reasoner_triggered: reasoner_triggered,
+                            });
+                        }, t_ms);
                     } else {
                         console.log("Cannot trigger requested help. Resetting reasoner");
                         this.portToBackGroundScript.postMessage({type: "resetReasoner"});
