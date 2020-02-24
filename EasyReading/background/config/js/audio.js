@@ -21,6 +21,7 @@ let audioPlayer = {
     },
     playOrStop:function (button) {
 
+
         if(this.audio){
             this.audio.pause();
             this.audio = null;

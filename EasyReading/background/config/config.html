@@ -19,22 +19,18 @@
 <body>
 
 
-
-<audio src="audio/test.mp3" id="myAudio"></audio>
-<div class="row-header row">
-    <div class="medium-12 columns">
-
-        <header id="header">
-            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
-                    src="img/text-to-speech.png">
-            </button>
-            <h1 class="heading1">Vielen Dank, dass Sie Easy Reading installiert haben.
-            </h1>
-            <div class="logo"><img src="img/logo.png" alt="EasyReading Logo" class="logo"></div>
-
-        </header>
-        <hr class="header-hr">
-    </div>
+<div class="row">
+    <header class="medium-12 columns">
+        <div class="columns small-11 large-11 er-header">
+            <button type="button" class="er-audio-player" data-audio-elements="heading1"><img
+                    src="img/text-to-speech.png"></button>
+            <h1 id="heading1" class="heading1"  data-audio-src="audio/de/heading.mp3">Vielen Dank, dass Sie Easy Reading installiert haben!</h1>
+        </div>
+        <div class="columns small-1 large-1">
+            <img src="img/logo.png" alt="EasyReading Logo" class="logo">
+        </div>
+    </header>
+    <hr class="header-hr">
 </div>
 
 <main>
@@ -56,16 +52,16 @@
             </button>
         </div>
         <div class="columns small-1 large-1 tts-column">
-            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+            <button type="button" class="er-audio-player" data-audio-elements="button1_text_1 button1_text_2"><img
                     src="img/text-to-speech.png">
             </button>
         </div>
         <div class="columns small-7 large-7">
-            <p id="p1" data-audio-src="audio/test.mp3">
+            <p id="button1_text_1" data-audio-src="audio/de/button1_text_1.mp3">
                 Haben Sie ein Google-Konto?<br>
                 Dann können Sie es benutzen.
             </p>
-            <p>
+            <p id="button1_text_2" data-audio-src="audio/de/button1_text_2.mp3">
                 Ihre Zugangsdaten und Ihre Einstellungen bleiben gespeichert.<br>
                 Auch dann, wenn Sie Ihr Gerät herunter fahren und neu starten.
             </p>
@@ -83,16 +79,16 @@
             </button>
         </div>
         <div class="columns small-1 large-1 tts-column">
-            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+            <button type="button" class="er-audio-player" data-audio-elements="button2_text_1 button2_text_2"><img
                     src="img/text-to-speech.png">
             </button>
         </div>
         <div class="columns small-7 large-7">
-            <p id="p1" data-audio-src="audio/test.mp3">
+            <p id="button2_text_1" data-audio-src="audio/de/button2_text_1.mp3">
                 Haben Sie ein Facebook-Konto?<br>
                 Dann können Sie es benutzen.
             </p>
-            <p>
+            <p id="button2_text_2" data-audio-src="audio/de/button2_text_1.mp3">
                 Ihre Zugangsdaten und Ihre Einstellungen bleiben gespeichert.<br>
                 Auch dann, wenn Sie Ihr Gerät herunter fahren und neu starten.
 
@@ -112,16 +108,16 @@
             </button>
         </div>
         <div class="columns small-1 large-1 tts-column">
-            <button type="button" class="er-audio-player" data-audio-elements="p1"><img
+            <button type="button" class="er-audio-player" data-audio-elements="button3_text_1 button3_text_2"><img
                     src="img/text-to-speech.png">
             </button>
         </div>
         <div class="columns small-7 large-7">
-            <p id="p1" data-audio-src="audio/test.mp3">
+            <p id="button3_text_1" data-audio-src="audio/de/button3_text_1.mp3">
                 Sie möchten lieber unerkannt bleiben?<br>
                 Dann können Sie sich anonym anmelden.
             </p>
-            <p>
+            <p id="button3_text_2" data-audio-src="audio/de/button3_text_2.mp3">
                 Ihre Daten und Einstellungen werden nicht gespeichert.<br>
                 Alle Einstellungen gehen verloren, wenn Sie Ihr Gerät neu starten.
             </p>

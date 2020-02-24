@@ -21,12 +21,12 @@ $(document).ready(function () {
             selectEndpointURLFieldSetHTML+=
                 ' <input type="radio" id="endpoint'+i+'" name="cloudServer" value="'+i+'" checked>\n' +
                 ' <label for="endpoint'+i+'">'+backgroundPage.easyReading.cloudEndpoints[i].description+'</label>\n' +
-                ' <br>';
+                ' ';
         }else{
             selectEndpointURLFieldSetHTML+=
                 ' <input type="radio" id="endpoint'+i+'" name="cloudServer" value="'+i+'">\n' +
                 ' <label for="endpoint'+i+'">'+backgroundPage.easyReading.cloudEndpoints[i].description+'</label>\n' +
-                ' <br>';
+                '';
         }
 
     }

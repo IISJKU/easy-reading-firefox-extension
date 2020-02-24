@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Easy Reader",
+    "message": "Easy Reading",
     "description": "Name of the extension."
   },
   "extensionDescription": {
@@ -8,24 +8,46 @@
     "description": "Description of the extension."
   },
 
-
-  "loginMessage": {
-    "message": "Easy Reader Login"
+  "login_welcome": {
+    "message": "Vielen Dank, dass Sie Easy Reading Installiert haben"
   },
 
-  "loginDescription": {
-    "message": "Anmelden oder registrieren mit:"
+  "login_type_text": {
+    "message": "Wie möchten Sie sich anmelden?"
   },
 
-  "loginGoogle": {
-    "message": "Google"
+  "login_type_google_text": {
+    "message": "mit Google"
   },
 
-  "loginFacebook": {
-    "message": "Weiter mit Facebook"
+  "login_type_google_p1": {
+    "message": "Haben Sie ein Google-Konto? <br> Dann können Sie es benutzen. "
+  },
+  "login_type_google_p2": {
+    "message": "Ihre Zugangsdaten und Ihre Einstellungen bleiben gespeichert.<br>Auch dann, wenn Sie Ihr Gerät herunter fahren und neu starten. "
   },
 
-  "loginAnonym": {
-    "message": "Anonym anmelden"
+  "login_type_facebook_text": {
+    "message": "mit Facebook"
+  },
+
+  "login_type_facebook_p1": {
+    "message": "Haben Sie ein Facebook-Konto?<br>Dann können Sie es benutzen. "
+  },
+
+  "login_type_facebook_p2": {
+    "message": "Ihre Zugangsdaten und Ihre Einstellungen bleiben gespeichert.<br>Auch dann, wenn Sie Ihr Gerät herunter fahren und neu starten. "
+  },
+
+  "login_type_anonymous_text": {
+    "message": "Anonym"
+  },
+
+  "login_type_anonymous_p1": {
+    "message": "Sie möchten lieber unerkannt bleiben?<br>Dann können Sie sich anonym anmelden. "
+  },
+
+  "login_type_anonymous_p2": {
+    "message": "Ihre Daten und Einstellungen werden nicht gespeichert.<br>Alle Einstellungen gehen verloren, wenn Sie Ihr Gerät neu starten. "
   }
 }

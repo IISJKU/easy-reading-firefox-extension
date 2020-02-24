@@ -10,6 +10,8 @@
 }
 
 
+
+
 .icon>img{
     max-width: 80px;
     background: white;
@@ -294,8 +296,12 @@ img.check-mark{
 
 .logo, .heading1 {
     vertical-align: middle;
-    display: table-cell;
+    display:inline-block;
 
+}
+
+.er-header {
+    padding: 10px 0;
 }
 
 /*
