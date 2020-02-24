@@ -67,7 +67,8 @@ let audioPlayer = {
 
         this.currentTextElementId = this.elementsToPlay[0];
 
-        let audioSrc = $("#"+this.currentTextElementId).data("audio-src");
+        let userLang = browser.i18n.getUILanguage().split("-");
+        let audioSrc = "audio/"+userLang+"/"+$("#"+this.currentTextElementId).data("audio-src");
 
         audioPlayer.toggleTextElementHighlight(this.currentTextElementId);
         try{
