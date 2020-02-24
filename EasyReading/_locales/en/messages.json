@@ -1,31 +1,53 @@
 {
   "extensionName": {
-    "message": "Easy Reader",
+    "message": "Easy Reading",
     "description": "Name of the extension."
   },
   "extensionDescription": {
-    "message": "Helps people with difficult web content.",
+    "message": "Helps people to understand websites with difficult content.",
     "description": "Description of the extension."
   },
 
-
-  "loginMessage": {
-    "message": "Easy Reader Login"
+  "login_welcome": {
+    "message": "Thank you for installing Easy Reading"
   },
 
-  "loginDescription": {
-    "message": "Login or register with:"
+  "login_type_text": {
+    "message": "How do you want to sign in?"
   },
 
-  "loginGoogle": {
-    "message": "Google"
+  "login_type_google_text": {
+    "message": "with Google"
   },
 
-  "loginFacebook": {
-    "message": "Continue with Facebook"
+  "login_type_google_p1": {
+    "message": "Do you have a Google account? <br> You can use it to sign in. "
   },
 
-  "loginAnonym": {
-    "message": "Anonymous login"
+  "login_type_google_p2": {
+    "message": "Your personal settings will be saved.<br>Even if you shut down your browser and restart."
+  },
+
+  "login_type_facebook_text": {
+    "message": "with Facebook"
+  },
+
+  "login_type_facebook_p1": {
+    "message": "Do you have a Facebook account?<br>You can use it to sign in."
+  },
+
+  "login_type_facebook_p2": {
+    "message": "Your personal settings will be saved.<br>Even if you shut down your browser and restart."
+  },
+
+  "login_type_anonymous_text": {
+    "message": "Anonymous"
+  },
+
+  "login_type_anonymous_p1": {
+    "message": "Would you prefer to remain incognitoy?<br>You can sign in as an anonymous user. "
+  },
+  "login_type_anonymous_p2": {
+    "message": "Your personal settings will not be saved.<br>Once you sign out all settings will be lost."
   }
 }

@@ -2,11 +2,21 @@ var isEasyReadingConfigPage = true;
 
 $(document).ready(function () {
 
-    $('#loginMessage').html(browser.i18n.getMessage("loginMessage"));
-    $('#loginDescription').html(browser.i18n.getMessage("loginDescription"));
-    $('#loginGoogle').html(browser.i18n.getMessage("loginGoogle"));
-    $('#loginFacebook').html(browser.i18n.getMessage("loginFacebook"));
-    $('#anonymLogin').html(browser.i18n.getMessage("loginAnonym"));
+    $("#heading1").html(browser.i18n.getMessage("login_welcome"));
+    $("#heading2_1").html(browser.i18n.getMessage("login_type_text"));
+
+    $("#loginGoogle").html(browser.i18n.getMessage("login_type_google_text"));
+    $("#button1_text_1").html(browser.i18n.getMessage("login_type_google_p1"));
+    $("#button1_text_2").html(browser.i18n.getMessage("login_type_google_p2"));
+
+    $("#loginFacebook").html(browser.i18n.getMessage("login_type_facebook_text"));
+    $("#button2_text_1").html(browser.i18n.getMessage("login_type_facebook_p1"));
+    $("#button2_text_2").html(browser.i18n.getMessage("login_type_facebook_p2"));
+
+    $("#anonym").html(browser.i18n.getMessage("login_type_anonymous_text"));
+    $("#button3_text_1").html(browser.i18n.getMessage("login_type_anonymous_p1"));
+    $("#button3_text_2").html(browser.i18n.getMessage("login_type_anonymous_p2"));
+
 
     let backgroundPage = browser.extension.getBackgroundPage();
     let easyReadingConfig = backgroundPage.easyReading.config;
@@ -18,12 +28,12 @@ $(document).ready(function () {
             selectEndpointURLFieldSetHTML+=
                 ' <input type="radio" id="endpoint'+i+'" name="cloudServer" value="'+i+'" checked>\n' +
                 ' <label for="endpoint'+i+'">'+backgroundPage.easyReading.cloudEndpoints[i].description+'</label>\n' +
-                ' <br>';
+                ' ';
         }else{
             selectEndpointURLFieldSetHTML+=
                 ' <input type="radio" id="endpoint'+i+'" name="cloudServer" value="'+i+'">\n' +
                 ' <label for="endpoint'+i+'">'+backgroundPage.easyReading.cloudEndpoints[i].description+'</label>\n' +
-                ' <br>';
+                '';
         }
 
     }
@@ -47,6 +57,9 @@ $(document).ready(function () {
     });
 
     $("#fbSignInButton").click(function () {
+
+        var x = document.getElementById("myAudio");
+        x.play();
 
         if(backgroundPage.background.userLoggedIn){
             updateStatus();
