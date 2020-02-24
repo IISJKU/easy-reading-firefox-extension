@@ -5,7 +5,7 @@ $(document).ready(function () {
     $("#heading1").html(browser.i18n.getMessage("login_welcome"));
     $("#heading2_1").html(browser.i18n.getMessage("login_type_text"));
 
-    $("#loginGoogle").html(browser.i18n.getMessage("login_type_text"));
+    $("#loginGoogle").html(browser.i18n.getMessage("login_type_google_text"));
     $("#button1_text_1").html(browser.i18n.getMessage("login_type_google_p1"));
     $("#button1_text_2").html(browser.i18n.getMessage("login_type_google_p2"));
 
