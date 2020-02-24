@@ -2,15 +2,22 @@ var isEasyReadingConfigPage = true;
 
 $(document).ready(function () {
 
-    /*
-    $('#loginMessage').html(browser.i18n.getMessage("loginMessage"));
-    $('#loginDescription').html(browser.i18n.getMessage("loginDescription"));
-    $('#loginGoogle').html(browser.i18n.getMessage("loginGoogle"));
-    $('#loginFacebook').html(browser.i18n.getMessage("loginFacebook"));
-    $('#anonymLogin').html(browser.i18n.getMessage("loginAnonym"));
+    $("#heading1").html(browser.i18n.getMessage("login_welcome"));
+    $("#heading2_1").html(browser.i18n.getMessage("login_type_text"));
+
+    $("#loginGoogle").html(browser.i18n.getMessage("login_type_text"));
+    $("#button1_text_1").html(browser.i18n.getMessage("login_type_google_p1"));
+    $("#button1_text_2").html(browser.i18n.getMessage("login_type_google_p2"));
+
+    $("#loginFacebook").html(browser.i18n.getMessage("login_type_facebook_text"));
+    $("#button2_text_1").html(browser.i18n.getMessage("login_type_facebook_p1"));
+    $("#button2_text_2").html(browser.i18n.getMessage("login_type_facebook_p2"));
+
+    $("#anonym").html(browser.i18n.getMessage("login_type_anonymous_text"));
+    $("#button3_text_1").html(browser.i18n.getMessage("login_type_anonymous_p1"));
+    $("#button3_text_2").html(browser.i18n.getMessage("login_type_anonymous_p2"));
 
 
-     */
     let backgroundPage = browser.extension.getBackgroundPage();
     let easyReadingConfig = backgroundPage.easyReading.config;
     let selectEndpointURLFieldSetHTML = '<fieldset class="cloudServerSelect">\n' +
