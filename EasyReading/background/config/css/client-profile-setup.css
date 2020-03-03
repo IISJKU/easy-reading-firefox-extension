@@ -315,17 +315,24 @@ img.check-mark{
 }
 .logo {
     text-align: center;
-    width: 70px;
+    width: 80px;
+    position: absolute;
+    margin-top: -20px;
 }
-
+.logo-column{
+    padding: 0px;
+}
 .logo, .heading1 {
     vertical-align: middle;
     display:inline-block;
 
 }
-
-.er-header {
-    padding: 10px 0;
+.header{
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+h1, .h1 {
+    font-size: 1.8rem;
 }
 
 /*
