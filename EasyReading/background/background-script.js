@@ -151,13 +151,23 @@ var background = {
             case "userUpdateResult":
 
                 scriptManager.reset();
-                scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url, true);
+                if(receivedMessage.result.resetNeeded){
+                    receivedMessage.result.resetNeeded = false;
+                    //During configuration wizard....
+                    scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url);
+                }else{
+                    scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url, true);
+                }
+
+
 
                 console.log("user update");
                 let message = {
                     type: receivedMessage.type,
                     data: JSON.parse(JSON.stringify(scriptManager)),
                 };
+
+
 
 
                 if (scriptManager.debugMode) {

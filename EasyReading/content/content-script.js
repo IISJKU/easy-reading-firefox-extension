@@ -58,7 +58,9 @@ let contentScriptController = {
                         }
 
                         easyReading.startup( contentScriptController.scriptManager.uiCollection);
-                        easyReading.busyAnimation.stopAnimation();
+                        if(easyReading.busyAnimation) {
+                            easyReading.busyAnimation.stopAnimation();
+                        }
 
 
                     });
