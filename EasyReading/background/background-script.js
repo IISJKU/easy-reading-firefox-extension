@@ -906,15 +906,44 @@ browser.browserAction.onClicked.addListener(async () => {
     if (configTabs.length > 0) {
         for(let i=0; i < configTabs.length; i++){
 
+            if (configTabs[i].url.indexOf("https://" + cloudWebSocket.config.url+"/client/finished") !== -1) {
+                browser.tabs.update(configTabs[i].id, {
+                    active: true,
+                    url:"https://" + cloudWebSocket.config.url+"/client/welcome"
+                });
+                return;
+            }
+
+
             if (configTabs[i].url.indexOf("https://" + cloudWebSocket.config.url+"/client") !== -1) {
                 browser.tabs.update(configTabs[i].id, {active: true});
 
                 return;
 
             }
+
+
         }
     }
 
-    browser.runtime.openOptionsPage();
+    if(background.userLoggedIn){
+
+        function onCreated(tab) {
+            console.log(`Created new tab: ${tab.id}`)
+        }
+
+        function onError(error) {
+            console.log(`Error: ${error}`);
+        }
+
+        let creating = browser.tabs.create({
+            url:"https://" + cloudWebSocket.config.url+"/client/welcome"
+        });
+        creating.then(onCreated, onError);
+    }else{
+        browser.runtime.openOptionsPage();
+    }
+
+
 
 });
