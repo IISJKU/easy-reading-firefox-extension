@@ -64,6 +64,7 @@ var background = {
 
                 break;
             case "userLoginResult":
+                tabUiConfigManager.clear();
                 scriptManager.reset();
                 scriptManager.loadScripts(receivedMessage.result, cloudWebSocket.config.url);
 
@@ -895,6 +896,10 @@ let tabUiConfigManager = {
         }
 
         return [];
+    },
+
+    clear(){
+        this.tabConfigs = [];
     }
 
 };
