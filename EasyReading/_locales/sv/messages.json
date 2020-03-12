@@ -1,53 +1,53 @@
 {
   "extensionName": {
     "message": "Easy Reading",
-    "description": "Name of the extension."
+    "description": "Namn på tillägget."
   },
   "extensionDescription": {
-    "message": "Helps people to understand websites with difficult content.",
-    "description": "Description of the extension."
+    "message": "Hjälper personer att förstå webbplatser med svårt innehåll.",
+    "description": "Beskrivning av tillägget."
   },
 
   "login_welcome": {
-    "message": "Thank you for installing Easy Reading"
+    "message": "Tack för att du har installerat Easy Reading!"
   },
 
   "login_type_text": {
-    "message": "How do you want to sign in?"
+    "message": "Hur vill du logga in?"
   },
 
   "login_type_google_text": {
-    "message": "with Google"
+    "message": "med Google"
   },
 
   "login_type_google_p1": {
-    "message": "Do you have a Google account? <br> You can use it to sign in. "
+    "message": "Har du ett Google-konto? <br> Då kan du använda det för att logga in.  "
   },
 
   "login_type_google_p2": {
-    "message": "Your personal settings will be saved.<br>Even if you shut down your browser and restart."
+    "message": "Dina personliga inställningar kommer att sparas.<br>De är kvar även om du stänger webbläsaren och startar om. "
   },
 
   "login_type_facebook_text": {
-    "message": "with Facebook"
+    "message": "med Facebook"
   },
 
   "login_type_facebook_p1": {
-    "message": "Do you have a Facebook account?<br>You can use it to sign in."
+    "message": "Har du ett Facebook-konto?<br>Då kan du använda det för att logga in."
   },
 
   "login_type_facebook_p2": {
-    "message": "Your personal settings will be saved.<br>Even if you shut down your browser and restart."
+    "message": "Dina personliga inställningar kommer att sparas.<br>De är kvar även om du stänger webbläsaren och startar om."
   },
 
   "login_type_anonymous_text": {
-    "message": "Anonymous"
+    "message": "Anonymt"
   },
 
   "login_type_anonymous_p1": {
-    "message": "Would you prefer to remain incognitoy?<br>You can sign in as an anonymous user. "
+    "message": "Vill du hellre använda Easy Reading utan ett konto?<br>Då kan du logga in som en anonym användare."
   },
   "login_type_anonymous_p2": {
-    "message": "Your personal settings will not be saved.<br>Once you sign out all settings will be lost."
+    "message": "Dina personliga inställningar kommer inte att sparas.<br>När du loggar ut kommer allt du har ställt in att tas bort."
   }
 }
