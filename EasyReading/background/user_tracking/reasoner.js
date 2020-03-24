@@ -45,7 +45,6 @@ class EasyReadingReasoner {
         this.s_next_buffer = [];  // Buffer of states after feedback
         this.gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
         this.gaze_offsets = [];  // User's gaze offsets for x and y coordinates from screen origin to viewport origin
-        this.stored_feedback = null;
 
         // Timeouts
         this.unfreezeTimeout = null;
@@ -146,7 +145,6 @@ class EasyReadingReasoner {
         this.s_next_buffer = [];
         this.feature_names = [];
         this.gaze_info = [];
-        this.stored_feedback = null;
         this.unfreeze(false);
         this.waiting_start = null;
         this.clearTimeouts();
