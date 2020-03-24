@@ -4,14 +4,56 @@
  */
 class EasyReadingReasoner {
 
-    // Model hyper-parameters
-    model_type = 'none';
-    model = null;
-    alpha = 0.01;  // Step size
-    gamma = 0.1;  // Discount factor
-    eps = 0.1;  // Epsilon for e-greedy policies
-    eps_decay = 1;  // Epsilon decay factor (applied on each time step)
-    episode_length = 20;  // Time steps before ending episode
+    constructor (step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1) {
+        // Model hyper-parameters
+        this.model_type = 'none';
+        this.model = null;
+        this.alpha = step_size;  // Step size
+        this.gamma = gamma;  // Discount factor
+        this.eps = eps;  // Epsilon for e-greedy policies
+        this.eps_decay = eps_decay;  // Epsilon decay factor (applied on each time step)
+        this.t_current = 1;
+        this.gaze_offsets = [x_offset, y_offset];
+        this.episode_length = 20;  // Time steps before ending episode
+
+        // Internal parameters
+        this.id = -1;
+        this.pid = -1;  // User profile ID
+        this.is_active = true;  // Reasoner is disabled when tracking data not available e.g. AsTeRICS model not running
+        this.is_paused = false;  // Reasoner is paused while cloud processes a request
+        this.user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
+        this.reward = null;  // Reward obtained in current timestep
+        this.s_curr = null;  // Current state (tensor)
+        this.s_next = null;  // Next state (tensor)
+        this.last_action = null;  // Last action taken
+        this.user_action = null;  // Action actually taken by user
+        this.t_current = 1;  // Current timestep
+        this.waiting_start = null;
+        this.waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
+        this.collect_t = "before";  // Whether status being received refers to before or after feedback obtained
+        this.feature_names = [];
+        this.cancel_unfreeze = false;
+        this.freeze_start = null;
+
+        // Tracking parameters
+        this.IDLE_TIME = 30000;  // User idle time (ms) before inferring user reward
+        this.NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
+        this.UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
+        this.BUFFER_BEFORE_SIZE = 5;
+        this.BUFFER_AFTER_SIZE = 5;
+        this.s_buffer = [];  // Buffer of states before feedback
+        this.s_next_buffer = [];  // Buffer of states after feedback
+        this.gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
+        this.gaze_offsets = [];  // User's gaze offsets for x and y coordinates from screen origin to viewport origin
+        this.stored_feedback = null;
+
+        // Timeouts
+        this.unfreezeTimeout = null;
+        this.serializeTimeout = null;
+        this.waitUserReactionTimeout = null;
+        this.waitForFeedbackTimeout = null;
+        this.collectNextStateTimeout = null;
+    }
 
     set active(active) {
         this.is_active = active;
@@ -26,44 +68,6 @@ class EasyReadingReasoner {
         return this.is_active;
     }
 
-    // Internal parameters
-    id = -1;
-    pid = -1;  // User profile ID
-    is_active = true;  // Reasoner is disabled when tracking data not available e.g. AsTeRICS model not running
-    is_paused = false;  // Reasoner is paused while cloud processes a request
-    user_status = EasyReadingReasoner.user_S.relaxed;  // Estimation of user's current status
-    reward = null;  // Reward obtained in current timestep
-    s_curr = null;  // Current state (tensor)
-    s_next = null;  // Next state (tensor)
-    last_action = null;  // Last action taken
-    user_action = null;  // Action actually taken by user
-    t_current = 1;  // Current timestep
-    waiting_start = null;
-    waiting_feedback = false;  // Whether reasoner is waiting for user feedback (feedback may be implicit)
-    collect_t = "before";  // Whether status being received refers to before or after feedback obtained
-    feature_names = [];
-    cancel_unfreeze = false;
-    freeze_start = null;
-
-    // Tracking parameters
-    IDLE_TIME = 30000;  // User idle time (ms) before inferring user reward
-    NEXT_STATE_TIME = 10000;  // Time to wait when collecting next state
-    UNFREEZE_TIME = 300000;  // Time to automatically unfreeze paused reasoner (5 minutes)
-    BUFFER_BEFORE_SIZE = 5;
-    BUFFER_AFTER_SIZE = 5;
-    s_buffer = [];  // Buffer of states before feedback
-    s_next_buffer = [];  // Buffer of states after feedback
-    gaze_info = [];  // User's gaze coordinates (relative to the viewport) of state being reasoned
-    gaze_offsets = [];  // User's gaze offsets for x and y coordinates from screen origin to viewport origin
-    stored_feedback = null;
-
-    // Timeouts
-    unfreezeTimeout = null;
-    serializeTimeout = null;
-    waitUserReactionTimeout = null;
-    waitForFeedbackTimeout = null;
-    collectNextStateTimeout = null;
-
     /**
      * Action set
      */
@@ -76,15 +80,6 @@ class EasyReadingReasoner {
      */
     static get user_S() {
         return {'relaxed': 'relaxed', 'confused': 'confused', 'unsure': 'unsure'};
-    }
-
-    constructor (step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1) {
-        this.alpha = step_size;
-        this.gamma = gamma;
-        this.eps = eps;
-        this.eps_decay = eps_decay;
-        this.t_current = 1;
-        this.gaze_offsets = [x_offset, y_offset];
     }
 
     load(id, pid, hyperparams) {

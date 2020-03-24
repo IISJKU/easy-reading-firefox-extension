@@ -1,11 +1,4 @@
 class ActionValueFunction {
-    q = {};
-    actions = [];
-    n_actions = 0;
-    preferred_actions = [];
-    count_actions = {};  // Counter of actions taken
-    ucb_c = 0.0;  // UCB degree of exploration
-
     /**
      * ActionValueFunction constructor
      * @param actions: list<string>; agent actions
@@ -14,8 +7,13 @@ class ActionValueFunction {
      * @param ucb_c: float; UCB degree of exploration
      */
     constructor(actions, preferred_a=[], ignore_a=[], ucb_c=0.0) {
+        this.q = {};
+        this.actions = [];
+        this.n_actions = 0;
+        this.preferred_actions = [];
+        this.count_actions = {};  // Counter of actions taken
+        this.ucb_c = 0.0;  // UCB degree of exploration
         if (actions && actions.length > 0) {
-            this.actions = [];
             for (let i=0; i<actions.length; i++) {
                 if (ignore_a.indexOf(actions[i]) < 0) {
                     this.actions.push(actions[i]);
