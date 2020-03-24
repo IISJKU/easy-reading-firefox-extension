@@ -1,12 +1,12 @@
 {
   "manifest_version": 2,
-  "name": "Easy Reader2",
+  "name": "Easy Reading",
   "version": "1.0",
 
   "applications": {
     "gecko": {
       "id": "easyReader2@example.com",
-      "strict_min_version": "42.0"
+      "strict_min_version": "60.0"
     }
   },
 

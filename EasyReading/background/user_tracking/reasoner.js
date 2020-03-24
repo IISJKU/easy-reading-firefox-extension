@@ -693,13 +693,11 @@ class EasyReadingReasoner {
 
 class QLearningReasoner extends EasyReadingReasoner {
 
-    ucb = 0; // Upper-Confidence-Bound Action Selection constant
-    q_func = null;  // Action value function: (n_states x n_features) tensor
-
     constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
         super(step_size, x_offset, y_offset, gamma, eps, eps_decay);
+        this.q_func = null;  // Action value function: (n_states x n_features) tensor
         this.model_type = 'q_learning';
-        this.ucb = ucb;
+        this.ucb = ucb;  // Upper-Confidence-Bound Action Selection constant
         this.initQFunction();
         this.resetStatus();
     }
@@ -763,10 +761,9 @@ class QLearningReasoner extends EasyReadingReasoner {
 
 class DoubleQLearningReasoner extends QLearningReasoner {
 
-    q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
-
     constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
         super(step_size, x_offset, y_offset, gamma, eps, eps_decay, ucb);
+        this.q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
         this.model_type = 'double_q_learning';
         this.initDoubleQFunction();
     }
