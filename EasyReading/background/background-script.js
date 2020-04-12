@@ -648,6 +648,9 @@ browser.runtime.onConnect.addListener(function (p) {
                     portManager.addPortInfoToMessage(m, p);
                     cloudWebSocket.sendMessage(JSON.stringify(m));
                     break;
+                case "recommendationResult":
+                    cloudWebSocket.sendMessage(JSON.stringify(m));
+                    break;
                 case "getUserProfile":
                     console.log("GETTING PROFILE");
                     if (scriptManager.profileReceived) {
