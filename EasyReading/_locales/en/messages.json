@@ -45,7 +45,7 @@
   },
 
   "login_type_anonymous_p1": {
-    "message": "Would you prefer to remain incognitoy?<br>You can sign in as an anonymous user. "
+    "message": "Would you prefer to remain incognito?<br>You can sign in as an anonymous user. "
   },
   "login_type_anonymous_p2": {
     "message": "Your personal settings will not be saved.<br>Once you sign out all settings will be lost."

@@ -47,6 +47,7 @@ var scriptManager = {
 
         scriptManager.uiCollection.userInterfaces = profile.userInterfaces;
         scriptManager.uiCollection.busyAnimation = profile.busyAnimation;
+        scriptManager.uiCollection.serverURL = "https://"+scriptManager.webSocketUrl;
 
         //static scripts
         if(profile.static){
