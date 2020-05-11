@@ -46,13 +46,22 @@ var silentLogin = {
 
                 }else{
 
-                    await browser.runtime.openOptionsPage();
                     let optionsPage = await background.getActiveOptionsPage();
 
                     if(optionsPage){
                         console.log("silent login:");
                         console.log(silentLogin.getLoginURL());
                         optionsPage.silentLoginFailed(silentLogin.getLoginURL());
+                    }else{
+                        await browser.runtime.openOptionsPage();
+                        let optionsPage = await background.getActiveOptionsPage();
+
+                        if(optionsPage) {
+                            console.log("silent login:");
+                            console.log(silentLogin.getLoginURL());
+                            optionsPage.silentLoginFailed(silentLogin.getLoginURL());
+                        }
+
                     }
                 }
 

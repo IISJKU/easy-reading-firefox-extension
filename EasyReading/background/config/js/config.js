@@ -58,9 +58,6 @@ $(document).ready(function () {
 
     $("#fbSignInButton").click(function () {
 
-        var x = document.getElementById("myAudio");
-        x.play();
-
         if(backgroundPage.background.userLoggedIn){
             updateStatus();
         }else {
@@ -116,6 +113,7 @@ $(document).ready(function () {
 
     if(urlVars['debug'] === "true"){
         $('#toggleContainer').show();
+        $('#fb-login').show();
     }
 
     updateStatus();
