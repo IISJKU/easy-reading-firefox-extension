@@ -4,14 +4,25 @@
  */
 class EasyReadingReasoner {
 
-    constructor (step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1) {
+    /**
+     * Create a base reasoner.
+     * @param {number} step_size - Step size in model update rule, between 0 and 1, commonly known as alpha
+     * @param {number} x_offset - Offset from the screen's origin, in pixels, of the x coordinate
+     * of the browser's window
+     * @param {number} y_offset - Offset from the screen's origin, in pixels, of the y coordinate
+     * of the browser's window
+     * @param {number} gamma - Discount factor used in return computation
+     * @param {number} eps - Epsilon probability for e-greedy policies
+     * @param {number} eps_decay - Epsilon decay factor (applied on each time step)
+     */
+    constructor (step_size=0.01, x_offset = 0, y_offset = 0, gamma=1., eps=0.1, eps_decay=1) {
         // Model hyper-parameters
         this.model_type = 'none';
         this.model = null;
-        this.alpha = step_size;  // Step size
-        this.gamma = gamma;  // Discount factor
-        this.eps = eps;  // Epsilon for e-greedy policies
-        this.eps_decay = eps_decay;  // Epsilon decay factor (applied on each time step)
+        this.alpha = step_size;
+        this.gamma = gamma;
+        this.eps = eps;
+        this.eps_decay = eps_decay;
         this.t_current = 1;
         this.gaze_offsets = [x_offset, y_offset];
         this.episode_length = 20;  // Time steps before ending episode
@@ -54,6 +65,10 @@ class EasyReadingReasoner {
         this.collectNextStateTimeout = null;
     }
 
+    /**
+     * Active set object. A disabled reasoner ignores any incoming tracking data
+     * @param {boolean} active: whether to activate/enable or deactivate/disable the current reasoner
+     */
     set active(active) {
         this.is_active = active;
         if (active) {
@@ -63,24 +78,37 @@ class EasyReadingReasoner {
             this.resetStatus();
         }
     }
+
+    /**
+     * Active get object. A disabled reasoner ignores any incoming tracking data
+     * @returns {boolean}: whether the current reasoner is active (True) or disabled (False)
+     */
     get active() {
         return this.is_active;
     }
 
     /**
-     * Action set
+     * Actions get object: return the environment actions in an object
+     * @returns {{nop: string, askUser: string, showHelp: string, ignore: string}}
      */
     static get A() {
         return {'nop': 'nop', 'askUser': 'askuser', 'showHelp': 'showhelp', 'ignore': 'ignore'};
     }
 
     /**
-     * User states
+     * States get object: return the set of user states in an object
+     * @returns {{relaxed: string, confused: string, unsure: string}}
      */
     static get user_S() {
         return {'relaxed': 'relaxed', 'confused': 'confused', 'unsure': 'unsure'};
     }
 
+    /**
+     * Populate this reasoner from objects
+     * @param {number} id: reasoner unique id
+     * @param {number} pid: user profile id
+     * @param {Object.} hyperparams: key-value pairs to initialize this reasoner's attributes.
+     */
     load(id, pid, hyperparams) {
         // Copy hyper-parameters to this reasoner
         this.id = id;
@@ -97,12 +125,22 @@ class EasyReadingReasoner {
         this.model = null;
     }
 
+    /**
+     * Populate this reasoner's parameters from an object
+     * @param {Object.} params: key-value pairs to initialize this reasoner's parameters.
+     */
     loadParams(params) {
         if ('model' in params) {
             this.model = params.model;
         }
     }
 
+    /**
+     * Convert this reasoner to an object
+     * @param {boolean} include_params: whether to include this model's parameters (True) or only its uninitialized
+     * topology (False)
+     * @returns {Object.}: serialized reasoner instance as key-value pairs
+     */
     async to_dict(include_params=true) {
         let hyperparams = {
             'alpha' : this.alpha,
@@ -127,6 +165,10 @@ class EasyReadingReasoner {
         return dict_out;
     }
 
+    /**
+     * Serialize this reasoner to JSON
+     * @returns {Promise<string>}: JSON-serialized reasoner instance
+     */
     async serialize() {
         let model_dict = await this.to_dict();
         return JSON.stringify(model_dict);
@@ -157,6 +199,9 @@ class EasyReadingReasoner {
         console.log("Reasoner status reset. Collecting new user state");
     }
 
+    /**
+     * Clear all timeouts of this instance
+     */
     clearTimeouts() {
         clearTimeout(this.unfreezeTimeout);
         clearTimeout(this.serializeTimeout);
@@ -167,8 +212,8 @@ class EasyReadingReasoner {
 
     /**
      * Take an step given the current state and model
-     * @param message An object (a single observation from tracking data) with feature labels as keys and feature
-     * vector as values
+     * @param {Object.} message An object (a single observation from tracking data) with feature labels as keys and
+     * feature vectors as values
      * @returns {string} Action to take next; null if collecting next state's data
      */
     step (message) {
@@ -237,12 +282,16 @@ class EasyReadingReasoner {
         return action;
     }
 
+    /**
+     * Return the best action for the current state given the model's current reasoning
+     * @returns {string} an action from set A
+     */
     bestAction() {
-        return EasyReadingReasoner.randomAction();
+        return EasyReadingReasoner.randomAction();  // Base agent has no knowledge, return random A
     }
 
     /**
-     * Observe next state after having taken an action
+     * Observe next state after having taken an action and wait until user performs and action or timeout
      */
     waitForUserReaction() {
         this.startCollectingNextState();
@@ -299,6 +348,9 @@ class EasyReadingReasoner {
         timeout();
     }
 
+    /**
+     * Infer user feedback from the user's action or from last taken reasoner's action if user did not respond
+     */
     setFeedbackAutomatically() {
         if (this.user_action) {  // Known action: Update immediately
             if (this.reward === null) {
@@ -322,7 +374,7 @@ class EasyReadingReasoner {
 
     /**
      * Compute reward and update current user status according to human feedback
-     * @param feedback: "help" or "ok" (help not needed)
+     * @param {string} feedback: "help" or "ok" (help not needed)
      */
     setHumanFeedback(feedback) {
         this.waiting_feedback = false;
@@ -376,6 +428,11 @@ class EasyReadingReasoner {
         }
     }
 
+    /**
+     * Perform an update step given an action and its reward given the current state
+     * @param {string} action: last taken action
+     * @param {string} reward: last reward obtained after having taken action
+     */
     updateStep(action, reward) {
         // Empty (update step performed by overridden subclass method)
     }
