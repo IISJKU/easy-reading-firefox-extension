@@ -31,7 +31,8 @@ function preProcessSample(labels, sample) {
 }
 
 /**
- * Get representative gaze position for the given samples
+ * Get representative gaze position for the given samples. Usually, the x and y coordinates of the longest fixation
+ * performed by the user given a batch of samples.
  */
 function get_gaze(labels, samples, x_offset=0, y_offset=0) {
     let gaze_x = 0;

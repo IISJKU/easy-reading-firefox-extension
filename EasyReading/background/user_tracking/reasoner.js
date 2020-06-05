@@ -66,7 +66,9 @@ class EasyReadingReasoner {
     }
 
     /**
-     * Active set object. A disabled reasoner ignores any incoming tracking data
+     * Active set object. A disabled reasoner ignores any incoming tracking data. Moreover, its state gets reset.
+     * Once the reasoner is enabled again, it will start collecting data from an empty state. Long-term memory i.e.
+     * model parameters are always kept.
      * @param {boolean} active: whether to activate/enable or deactivate/disable the current reasoner
      */
     set active(active) {
@@ -108,8 +110,9 @@ class EasyReadingReasoner {
      * @param {number} id: reasoner unique id
      * @param {number} pid: user profile id
      * @param {Object.} hyperparams: key-value pairs to initialize this reasoner's attributes.
+     * @param {Object.} params: trained model parameters e.g. weights or tabular values
      */
-    load(id, pid, hyperparams) {
+    load(id, pid, hyperparams, params=null) {
         // Copy hyper-parameters to this reasoner
         this.id = id;
         this.pid = pid;
@@ -544,6 +547,10 @@ class EasyReadingReasoner {
         }
     }
 
+    /**
+     * Freeze current reasoner. A frozen reasoner ignores any incoming tracking data, but its status is kept. If the
+     * reasoner stays frozen for too long, it unfreezes automatically after UNFREEZE_TIME milliseconds.
+     */
     freeze() {
         console.log('Freezing reasoner');
         this.is_paused = true;
@@ -573,6 +580,10 @@ class EasyReadingReasoner {
         }
     }
 
+    /**
+     * Unfreeze reasoner. Resume data collection.
+     * @param {boolean} log: whether to print to console that the reasoner has been unfrozen.
+     */
     unfreeze(log=true) {
         if (log) {
             console.log('Unfreezing reasoner');
@@ -588,12 +599,19 @@ class EasyReadingReasoner {
         }
     }
 
+    /**
+     * Compute user gaze coordinates from incoming tracking data.
+     * @param {Array.} labels: ordered list of feature labels. Must contain 'gazeX' and 'gazeY' labels appearing in
+     * the same position as their corresponding values appear on each sample of this.s_buffer.
+     */
     updateGazeInfo(labels) {
         this.gaze_info = get_gaze(labels, this.s_buffer, this.gaze_offsets[0], this.gaze_offsets[1]);
     }
 
     /**
      * Callback after an episode has ended
+     * @param {boolean} saveToCloud: whether to persist the current state of the reasoner to the user's profile in
+     * the cloud.
      */
     episodeEnd(saveToCloud=true) {
         console.log('Episode ended');
@@ -608,8 +626,8 @@ class EasyReadingReasoner {
 
     /**
      * Serialize reasoner model (or its parameters) and send to cloud
-     * @param what: what to serialize: only the model and its hyperparameters ('model'), only the current model's
-     * parameters ('params'), or everything ('all')
+     * @param {string} what: what to serialize: only the model and its hyperparameters ('model'), only the current
+     * model's parameters ('params'), or everything ('all')
      */
     sendSerializedModelToCloud(what='all') {
         let this_reasoner = this;
@@ -648,7 +666,7 @@ class EasyReadingReasoner {
 
     /**
      * Aggregate buffered states into a single state by averaging over all timesteps
-     * @param buffer: array of past states; shape (timesteps x n_features)
+     * @param {Array} buffer: array of past states; shape (timesteps x n_features)
      * @returns {Array}: aggregated state; shape (1 x n_features)
      */
     aggregateStates(buffer) {
@@ -689,8 +707,8 @@ class EasyReadingReasoner {
 
     /**
      * Compare human-given feedback with current estimation of user mood and return a corresponding numeric reward
-     * @param action: action taken (one of EasyReadingReasoner.A)
-     * @param feedback: User mood as selected by the user (confused/relaxed)
+     * @param {string} action: action taken (one of EasyReadingReasoner.A)
+     * @param {string} feedback: User mood as selected by the user (confused/relaxed)
      * @returns {number}: A numeric reward signal, the higher the better. Especially rewards detecting confusion.
      */
     humanFeedbackToReward(action, feedback) {
@@ -717,6 +735,11 @@ class EasyReadingReasoner {
         return reward;
     }
 
+    /**
+     * Return whether the reasoner must ignore user interaction with a certain web site
+     * @param {string} url: HTTP URL to consider
+     * @returns {boolean}: True if user tracking must be ignored for the given URL e.g. a system page; False otherwise
+     */
     isIgnoredUrl(url) {
         let ignore = false;
         let systemURL = easyReading.cloudEndpoints[easyReading.config.cloudEndpointIndex].url;
@@ -730,7 +753,7 @@ class EasyReadingReasoner {
 
     /**
      * Return a random action regardless of state; Asking user feedback has highest priority
-     * @returns {string}
+     * @returns {string}: An action; one of EasyReadingReasoner.A
      */
     static randomAction() {
         let action = EasyReadingReasoner.A.askUser;
@@ -745,20 +768,41 @@ class EasyReadingReasoner {
         return action
     }
 
-
 }
 
+/**
+ * A tabular Q-Learning reasoner.
+ */
 class QLearningReasoner extends EasyReadingReasoner {
 
+    /**
+     * Create a QLearningReasoner.
+     * @param {number} step_size - Step size in model update rule, between 0 and 1, commonly known as alpha
+     * @param {number} x_offset - Offset from the screen's origin, in pixels, of the x coordinate
+     * of the browser's window
+     * @param {number} y_offset - Offset from the screen's origin, in pixels, of the y coordinate
+     * of the browser's window
+     * @param {number} gamma - Discount factor used in return computation
+     * @param {number} eps - Epsilon probability for e-greedy policies
+     * @param {number} eps_decay - Epsilon decay factor (applied on each time step)
+     * @param {number} ucb - Upper-Confidence-Bound Action Selection constant. Should be kept to zero in most cases.
+     */
     constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
         super(step_size, x_offset, y_offset, gamma, eps, eps_decay);
         this.q_func = null;  // Action value function: (n_states x n_features) tensor
         this.model_type = 'q_learning';
-        this.ucb = ucb;  // Upper-Confidence-Bound Action Selection constant
+        this.ucb = ucb;
         this.initQFunction();
         this.resetStatus();
     }
 
+    /**
+     * Populate this reasoner from objects
+     * @param {number} id: reasoner unique id
+     * @param {number} pid: user profile id
+     * @param {Object.} hyperparams: key-value pairs to initialize this reasoner's attributes.
+     * @param {Object.} params: trained model parameters i.e. tabular Q-function values
+     */
     load(id, pid, hyperparams, params=null) {
         super.load(id, pid, hyperparams);
         this.model_type = 'q_learning';
@@ -771,6 +815,10 @@ class QLearningReasoner extends EasyReadingReasoner {
         }
     }
 
+    /**
+     * Populate this reasoner's model parameters
+     * @param {Object.} params: trained model parameters i.e. tabular Q-function values
+     */
     loadParams(params) {
         super.loadParams(params);
         if ('q_func' in params) {
@@ -782,6 +830,13 @@ class QLearningReasoner extends EasyReadingReasoner {
         }
     }
 
+    /**
+     * Convert this reasoner to an object
+     * @param {boolean} include_params: whether to include this model's parameters (True) or only its uninitialized
+     * topology (False)
+     * @returns {Object.}: serialized reasoner instance as key-value pairs. It adds 'ucb' and 'q_func' fields to
+     * the base reasoner object
+     */
     async to_dict(include_params=true) {
         let this_dict = await super.to_dict(include_params);
         if (include_params) {
@@ -793,6 +848,9 @@ class QLearningReasoner extends EasyReadingReasoner {
         return this_dict;
     }
 
+    /**
+     * Initialize this model's Q-Function from scratch i.e. lazily set all action-values to zero.
+     */
     initQFunction() {
         this.q_func = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
             [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],  // Preferred actions in ties
@@ -801,10 +859,20 @@ class QLearningReasoner extends EasyReadingReasoner {
         console.log('Q function initialized');
     }
 
+    /**
+     * Return the best action for the current state given the model's current reasoning i.e. the action with the highest
+     * q-value for the current state.
+     * @returns {string} an action from set A
+     */
     bestAction() {
         return this.q_func.epsGreedyAction(this.s_curr, this.eps, this.t_current, !this.is_paused);
     }
 
+    /**
+     * Perform an update step given an action and its reward given the current state
+     * @param {string} action: last taken action
+     * @param {string} reward: last reward obtained after having taken action
+     */
     updateStep(action, reward) {
         if (this.q_func) {
             console.log('Updating Q state-action value function');
@@ -816,8 +884,23 @@ class QLearningReasoner extends EasyReadingReasoner {
 
 }
 
+/**
+ * A tabular double q-learning reasoner
+ */
 class DoubleQLearningReasoner extends QLearningReasoner {
 
+    /**
+     * Create a DoubleQLearningReasoner.
+     * @param {number} step_size - Step size in model update rule, between 0 and 1, commonly known as alpha
+     * @param {number} x_offset - Offset from the screen's origin, in pixels, of the x coordinate
+     * of the browser's window
+     * @param {number} y_offset - Offset from the screen's origin, in pixels, of the y coordinate
+     * of the browser's window
+     * @param {number} gamma - Discount factor used in return computation
+     * @param {number} eps - Epsilon probability for e-greedy policies
+     * @param {number} eps_decay - Epsilon decay factor (applied on each time step)
+     * @param {number} ucb - Upper-Confidence-Bound Action Selection constant. Should be kept to zero in most cases.
+     */
     constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1, ucb=0.0) {
         super(step_size, x_offset, y_offset, gamma, eps, eps_decay, ucb);
         this.q_func_b = null;  // Action value function B for double Q-learning: (n_states x n_features) tensor
@@ -825,6 +908,9 @@ class DoubleQLearningReasoner extends QLearningReasoner {
         this.initDoubleQFunction();
     }
 
+    /**
+     * Initialize this model's Q-Functions from scratch i.e. lazily set all action-values to zero.
+     */
     initDoubleQFunction() {
         this.q_func_b = new ActionValueFunction(Object.values(EasyReadingReasoner.A),
             [EasyReadingReasoner.A.askUser, EasyReadingReasoner.A.nop],
@@ -833,6 +919,13 @@ class DoubleQLearningReasoner extends QLearningReasoner {
         console.log('Double Q function initialized');
     }
 
+    /**
+     * Populate this reasoner from objects
+     * @param {number} id: reasoner unique id
+     * @param {number} pid: user profile id
+     * @param {Object.} hyperparams: key-value pairs to initialize this reasoner's attributes.
+     * @param {Object.} params: trained model parameters i.e. tabular Q-function values
+     */
     load(id, pid, hyperparams, params) {
         super.load(id, pid, hyperparams, params);
         this.model_type = 'double_q_learning';
@@ -842,6 +935,10 @@ class DoubleQLearningReasoner extends QLearningReasoner {
         this.loadParams(params);
     }
 
+    /**
+     * Populate this reasoner's model parameters
+     * @param {Object.} params: trained model parameters i.e. tabular Q-function values
+     */
     loadParams(params) {
         super.loadParams(params);
         if ('q_func_b' in params) {
@@ -857,15 +954,25 @@ class DoubleQLearningReasoner extends QLearningReasoner {
         return this_dict;
     }
 
+    /**
+     * Return the best action for the current state given the model's current reasoning i.e. the action with the highest
+     * sum of q-values for the current state.
+     * @returns {string} an action from set A
+     */
     bestAction() {
         return this.q_func.epsGreedyCombinedAction(this.s_curr, this.eps, this.q_func_b, this.t_current, !this.is_paused);
     }
 
+    /**
+     * Perform an update step given an action and its reward given the current state
+     * @param {string} action: last taken action
+     * @param {string} reward: last reward obtained after having taken action
+     */
     updateStep(action, reward) {
         if (this.q_func && this.q_func_b) {
             console.log('Updating Double-Q state-action value function');
             let to_update = 'a';
-            if (Math.random() < 0.5) {
+            if (Math.random() < 0.5) {  // Update second q-value function with 50% probability
                 to_update = 'b';
             }
             let q_target = 0.0;
@@ -888,6 +995,9 @@ class DoubleQLearningReasoner extends QLearningReasoner {
 
 }
 
+/**
+ * An artificial neural network (ANN) reasoner
+ */
 class ANNReasoner extends EasyReadingReasoner {
 
     constructor(step_size=0.01, x_offset = 0, y_offset = 0, gamma=0.1, eps=0.1, eps_decay=1) {
@@ -895,6 +1005,13 @@ class ANNReasoner extends EasyReadingReasoner {
         this.model_type = 'rnn';
     }
 
+    /**
+     * Populate this reasoner from objects
+     * @param {number} id: reasoner unique id
+     * @param {number} pid: user profile id
+     * @param {Object.} hyperparams: key-value pairs to initialize this reasoner's attributes.
+     * @param {Object.} params: trained model parameters i.e. network weights
+     */
     load(id, pid, hyperparams, params) {
         if ('n_features' in params) {
             super.load(id, pid, hyperparams);
@@ -909,10 +1026,20 @@ class ANNReasoner extends EasyReadingReasoner {
         }
     }
 
+    /**
+     * Return the best action for the current state given the model's current reasoning
+     * @returns {string} an action from set A
+     */
     bestAction() {
         return this.model.predict(this.s_curr);
     }
 
+    /**
+     * Convert this reasoner to an object
+     * @param {boolean} include_params: whether to include this model's parameters (True) or only its uninitialized
+     * topology (False)
+     * @returns {Object.}: serialized reasoner instance as key-value pairs
+     */
     async to_dict(include_params=true) {
         return await this.model.save(tf.io.withSaveHandler(async modelArtifacts => modelArtifacts));
     }
