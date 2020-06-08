@@ -1,10 +1,13 @@
+/**
+ * Tabular action-value function (a.k.a. Q-function)
+ */
 class ActionValueFunction {
     /**
      * ActionValueFunction constructor
-     * @param actions: list<string>; agent actions
-     * @param preferred_a: list<string>; sorted list of actions. Lower indexed actions have higher preference in ties.
-     * @param ignore_a: list<string>; list of actions that will never be output.
-     * @param ucb_c: float; UCB degree of exploration
+     * @param {string[]} actions: agent actions
+     * @param {string[]} preferred_a: sorted list of actions. Lower indexed actions have higher preference in ties.
+     * @param {string[]} ignore_a: list of actions that will never be output.
+     * @param {number} ucb_c: UCB degree of exploration
      */
     constructor(actions, preferred_a=[], ignore_a=[], ucb_c=0.0) {
         this.q = {};
@@ -12,7 +15,7 @@ class ActionValueFunction {
         this.n_actions = 0;
         this.preferred_actions = [];
         this.count_actions = {};  // Counter of actions taken
-        this.ucb_c = 0.0;  // UCB degree of exploration
+        this.ucb_c = 0.0;
         if (actions && actions.length > 0) {
             for (let i=0; i<actions.length; i++) {
                 if (ignore_a.indexOf(actions[i]) < 0) {
@@ -26,6 +29,12 @@ class ActionValueFunction {
         }
     }
 
+    /**
+     * Retrieve the value of a (state, action) pair
+     * @param {(string|number)} state: State to consider
+     * @param {(string|number)} action: Action to consider
+     * @returns {number} Currently estimated return of taking the given action on the given state
+     */
     retrieve(state, action) {
         let state_data = background_util.getStateRepresentation(state);
         if (state_data in this.q && action in this.q[state_data]) {
@@ -35,6 +44,12 @@ class ActionValueFunction {
         }
     }
 
+    /**
+     * Retrieve the maximum value for the given state
+     * @param {(string|number)} state: State to consider
+     * @param {number} t: current time step
+     * @returns {number} Currently estimated return on the given state when taking the estimated best possible action
+     */
     retrieveGreedy(state, t) {
         let action = this.greedyAction(state, t, false);
         return this.retrieve(state, action);
@@ -42,11 +57,11 @@ class ActionValueFunction {
 
     /**
      * Greedy double Q-learning: Given S, return A <- argmax_a(Q(S,a) + Q_B(S,a))
-     * @param state; State for which to return best action
-     * @param q_b; ActionValueFunction instance for second action-value function
-     * @param t int: Agent's current time step
-     * @param increase_counter boolean: whether the action counter needs to be increased
-     * @returns string; Action yielding the best expected future return starting from S
+     * @param {(string|number)} state; State for which to return best action
+     * @param {ActionValueFunction} q_b; ActionValueFunction instance for second action-value function
+     * @param {number} t: Agent's current time step
+     * @param {boolean} increase_counter: whether the action counter needs to be increased
+     * @returns {(string|number)} Action yielding the best expected future return starting from S
      */
     greedyCombinedAction(state, q_b, t, increase_counter) {
         let chosen_a = null;
@@ -99,10 +114,10 @@ class ActionValueFunction {
 
     /**
      * Greedy Q-learning: Given S, return A <- argmax_a(Q(S,a))
-     * @param state; State for which to return best action
-     * @param t int: Agent's current time step
-     * @param increase_counter boolean: whether the action counter needs to be increased
-     * @returns string; Action yielding the best expected future return starting from S
+     * @param {(string|number)} state; State for which to return best action
+     * @param {number} t: Agent's current time step
+     * @param {boolean} increase_counter: whether the action counter needs to be increased
+     * @returns {(string|number)} Action yielding the best expected future return starting from S
      */
     greedyAction(state, t, increase_counter) {
         return this.greedyCombinedAction(state, null, t, increase_counter);
@@ -110,11 +125,11 @@ class ActionValueFunction {
 
     /**
      * Given S, return A <- argmax_a(Q(S,a)), with eps probability of instead choosing an action randomly
-     * @param state; State for which to return best action
-     * @param eps; Probability of exploring a random action instead of acting greedily
-     * @param t int: Agent's current time step
-     * @param increase_counter boolean: whether the action counter needs to be increased
-     * @returns string; Action yielding the best expected future return starting from S (or random action)
+     * @param {(string|number)} state; State for which to return best action
+     * @param {number} eps: Probability of exploring a random action instead of acting greedily
+     * @param {number} t: Agent's current time step
+     * @param {boolean} increase_counter: whether the action counter needs to be increased
+     * @returns {(string|number)} Action yielding the best expected future return starting from S (or random action)
      */
     epsGreedyAction(state, eps, t, increase_counter) {
         return this.epsGreedyCombinedAction(state, eps, null, t, increase_counter);
@@ -123,12 +138,12 @@ class ActionValueFunction {
     /**
      * Given S, return A <- argmax_a(Q(S,a) + Q_B(S,a)), with eps probability of instead choosing an action randomly
      * (double Q-learning)
-     * @param state; State for which to return best action
-     * @param eps; Probability of exploring a random action instead of acting greedily
-     * @param q_b; ActionValueFunction instance for second action-value function
-     * @param t int: Agent's current time step
-     * @param increase_counter boolean: whether the action counter needs to be increased
-     * @returns string; Action yielding the best expected future return starting from S (or random action)
+     * @param {(string|number)} state; State for which to return best action
+     * @param {number} eps: Probability of exploring a random action instead of acting greedily
+     * @param {ActionValueFunction} q_b: ActionValueFunction instance for second action-value function
+     * @param {number} t: Agent's current time step
+     * @param {boolean} increase_counter: whether the action counter needs to be increased
+     * @returns {(string|number)} Action yielding the best expected future return starting from S (or random action)
      */
     epsGreedyCombinedAction(state, eps, q_b, t, increase_counter) {
         if (eps > 0.01 && Math.random() <= eps) {
@@ -139,10 +154,10 @@ class ActionValueFunction {
 
     /**
      * Update rule: Q(s,a) <- Q(s,a) + value. Default value is zero.
-     * @param state
-     * @param action
-     * @param value
-     * @param update: True to update Q with new value, False to override old value with new one.
+     * @param {(string|number)} state; State to update
+     * @param {(string|number)} action; action to update
+     * @param {number} value: current estimation of (state, action) pair's return
+     * @param {boolean} update: True to update Q with new value, False to override old value with new one.
      */
     insert(state, action, value, update=false) {
         if (state) {
@@ -164,14 +179,21 @@ class ActionValueFunction {
         }
     }
 
+    /**
+     * Update rule: Q(s,a) <- Q(s,a) + value. Old value gets overridden by new one.
+     * @param {(string|number)} state; State to update
+     * @param {(string|number)} action; action to update
+     * @param {number} value: current estimation of (state, action) pair's return
+     */
     update(state, action, value) {
         this.insert(state, action, value, true);
     }
 
     /**
      * Returns the current UCB value for the given action
-     * @param action: action to consider
-     * @param t int: current time step
+     * @param {(string|number)} action; action to consider
+     * @param {number} t: current time step
+     * @returns {number} Computed UCB value
      */
     upper_confidence_bound(action, t) {
         if (action && t > 0 && action in this.count_actions) {
@@ -184,6 +206,11 @@ class ActionValueFunction {
         return 0.0;
     }
 
+    /**
+     * Return a random action from the action state
+     * @param {boolean} increase_counter: Whether to increase the action counter for the selected action
+     * @returns {(string|number)} the selected action
+     */
     getRandomAction(increase_counter) {
         let a = null;
         if (this.preferred_actions.length) {
@@ -197,6 +224,10 @@ class ActionValueFunction {
         return a;
     }
 
+    /**
+     * Serialize this action-value function to JSON
+     * @returns {string} JSON serialized object
+     */
     serialize() {
         return JSON.stringify({
             'q' : this.q,
@@ -207,6 +238,10 @@ class ActionValueFunction {
         });
     }
 
+    /**
+     * Load the contents of a serialized action-value function
+     * @param {Object.} serialized_q: an object from a just parsed JSON-serialized action-value function
+     */
     load(serialized_q) {
         if (serialized_q && !background_util.isEmptyObject(serialized_q)) {
             if ('q' in serialized_q) {
@@ -254,10 +289,19 @@ class ActionValueFunction {
         }
     }
 
+    /**
+     * Get the index in action space of a random action
+     * @returns {number}: a random index within the action space
+     */
     getRandomActionIndex() {
         return Math.floor(Math.random() * this.n_actions);
     }
 
+    /**
+     * Return the index of the maximum value of the given array
+     * @param {number[]} array: array of numerical values
+     * @returns {number}: index of the maximum value of array
+     */
     static argMax(array) {
         return array.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
     }
