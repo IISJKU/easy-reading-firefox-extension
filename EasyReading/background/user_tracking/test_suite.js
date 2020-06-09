@@ -18,6 +18,12 @@ if (start_test) {
     run_tests([reasoner_q, reasoner_d_q, reasoner_d_q_c, reasoner_d_q_c_2], params);
 }
 
+/**
+ * Run a series of reasoner performance tests on synthetic data
+ * @param {EasyReadingReasoner[]} agents: list of reasoner instances to be compared
+ * @param {number[]} test_config: test parameters
+ * @returns {Promise<void>}: nothing, test results will be plotted on the browser
+ */
 async function run_tests(agents, test_config) {
     // Initialize variables
     let [n_iterations, batch_size, relax_f, weave_f, error_f] = test_config;
@@ -122,6 +128,11 @@ async function run_tests(agents, test_config) {
     }
 }
 
+/**
+ * Convert a textual label to an integer
+ * @param {string} label: feature name
+ * @returns {number}: unique integer for the given label
+ */
 function labeltoInt(label) {
     let label_int = 2;
     if (label === 'ok') {
@@ -132,6 +143,11 @@ function labeltoInt(label) {
     return label_int;
 }
 
+/**
+ * Convert a user's action name to a user's mental state label
+ * @param {string} action: user's action name
+ * @returns {string}: equivalent label used internally by a reasoner
+ */
 function actionToLabel(action) {
     let label = action;
     if (action === 'showhelp') {

@@ -1,5 +1,8 @@
 /**
  * Pre-process a given sample so it fits the expected state format
+ * @param {string[]} labels: ordered list of feature names
+ * @param {number[]} sample: ordered list of feature values
+ * @returns {number[]}: pre-processed feature values
  */
 function preProcessSample(labels, sample) {
     const f_ignore = ['timestamp', 'label', 'gazeX', 'gazeY'];
@@ -33,6 +36,11 @@ function preProcessSample(labels, sample) {
 /**
  * Get representative gaze position for the given samples. Usually, the x and y coordinates of the longest fixation
  * performed by the user given a batch of samples.
+ * @param {string[]} labels: ordered list of feature names
+ * @param {number[]} samples: ordered list of feature values
+ * @param {number} x_offset: x-coordinate offset to be applied to user's gaze position
+ * @param {number} y_offset: y-coordinate offset to be applied to user's gaze position
+ * @returns {number[]}: (x, y) coordinates of the computed user's gaze on the browser window
  */
 function get_gaze(labels, samples, x_offset=0, y_offset=0) {
     let gaze_x = 0;
@@ -79,7 +87,7 @@ function get_gaze(labels, samples, x_offset=0, y_offset=0) {
 
 /**
  * Bin a given eye fixation duration into categories
- * @param fix_ms: float; fixation duration in milliseconds.
+ * @param {number }fix_ms: fixation duration, in milliseconds.
  * @returns {string} Binned category
  */
 function bin_fixation_ms(fix_ms) {
@@ -98,7 +106,7 @@ function bin_fixation_ms(fix_ms) {
 
 /**
  * Bin a given eye blink duration into categories
- * @param blink_ms: float; blink duration in milliseconds.
+ * @param {number} blink_ms: blink duration, in milliseconds.
  * @returns {string} Binned blink duration category
  */
 function bin_blink_ms(blink_ms) {
@@ -117,7 +125,7 @@ function bin_blink_ms(blink_ms) {
 
 /**
  * Clean a give rate trend value to an integer between -1 and 1 (inclusive)
- * @param rate: rate value
+ * @param {number} rate: rate value
  * @returns {number}: clear rate value (1 for rate increase, -1 for rate decrease, 0 for steady rate)
  */
 function processRate(rate) {
@@ -132,8 +140,8 @@ function processRate(rate) {
 
 /**
  * Return a random sample for testing purposes
- * @param status: 'ok' or 'confused'; Random with 80% 'ok' chance if empty
- * @returns: Sample object
+ * @param {string} status: 'ok' or 'confused'; Random with 80% 'ok' chance if empty
+ * @returns {{timestamp: string, fixation_ms: *, blink_ms: *, blink_rate: number, label: string}}
  */
 function getRandomSample(status) {
     if (!status) {

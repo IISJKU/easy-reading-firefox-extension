@@ -1,5 +1,14 @@
+/**
+ * Create reasoner of a specific subclass
+ */
 class EasyReadingReasonerFactory {
 
+    /**
+     * Create a new EasyReadingReasoner instance from the serialized data
+     * @param {Object.} model_dict: and object containing the reasoner's data
+     * @param {boolean} active: whether to enable the loaded reasoner
+     * @returns {EasyReadingReasoner} a reasoner instance of the given subclass
+     */
     static loadReasoner(model_dict, active=false) {
         let reasoner = null;
         let hyperparams = {};
@@ -33,6 +42,15 @@ class EasyReadingReasonerFactory {
         return reasoner;
     }
 
+    /**
+     * Create a new EasyReadingReasoner instance as given by the parameters
+     * @param {number} id: reasoner's ID
+     * @param {number} pid: user profile ID associated with the reasoner
+     * @param {string} model_type: model class of the reasoner
+     * @param {Object.} hyperparams: (key, value) pairs underpinning the model's hyper-parameters
+     * @param {Object.} params: (key, value) pairs underpinning the model's parameters/weights
+     * @returns {EasyReadingReasoner} a reasoner instance of the given subclass
+     */
     static createReasoner(id, pid, model_type, hyperparams, params) {
         let created = true;
         let reasoner = null;
