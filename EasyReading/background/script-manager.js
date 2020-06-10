@@ -1,6 +1,12 @@
+/**
+ * Injected JS and CSS utility wrapper
+ */
 var scriptManager = {
 
-     reset: function () {
+    /**
+     * Reset all injected content
+     */
+    reset: function () {
 
         if(scriptManager.remoteScripts){
             scriptManager.oldRemoteScripts = scriptManager.remoteScripts;
@@ -33,6 +39,12 @@ var scriptManager = {
 
     },
 
+    /**
+     * Load all user scripts and CSS
+     * @param {Object.} profile: User profile
+     * @param {string} webSocketUrl: WebSocket URI
+     * @param {boolean} update: Whether to update the user scripts
+     */
     loadScripts(profile,webSocketUrl,update= false) {
 
         scriptManager.profile = profile;
@@ -43,6 +55,11 @@ var scriptManager = {
         scriptManager.parseScriptsForInjection(profile,update);
     },
 
+    /**
+     * Prepare content to be injected into the Web site
+     * @param {Object.} profile: User profile
+     * @param {boolean} update: Whether to update the user scripts
+     */
     parseScriptsForInjection(profile,update=false) {
 
         scriptManager.uiCollection.userInterfaces = profile.userInterfaces;
@@ -123,6 +140,12 @@ var scriptManager = {
         }
 
     },
+
+    /**
+     * Insert the required content for the given component
+     * @param {Object.} component: a framework component e.g. an engine function
+     * @param {boolean} update: Whether to update the user scripts
+     */
     insertComponent:function (component,update) {
       if(scriptManager.debugMode){
           scriptManager.insertRemoteScriptsOfComponent(component,update);
@@ -131,6 +154,11 @@ var scriptManager = {
       }
     },
 
+    /**
+     * Insert a component's scripts on the page script
+     * @param {Object.} component: a framework component e.g. an engine function
+     * @param {boolean} update: Whether to update the user scripts
+     */
     insertScriptsOfComponent: function (component,update) {
 
         let versionID = component.source.id + "/" + component.source.version + "/";
@@ -178,6 +206,12 @@ var scriptManager = {
         }
 
     },
+
+    /**
+     * Insert scripts of a component remotely for debugging purposes
+     * @param {Object.} component: a framework component e.g. an engine function
+     * @param {boolean} update: Whether to update the user scripts
+     */
     insertRemoteScriptsOfComponent: function (component,update) {
         for (let i = 0; i < component.source.remoteScripts.length; i++) {
 
@@ -208,6 +242,13 @@ var scriptManager = {
         }
 
     },
+
+    /**
+     * Return whether the component with the given id is in an array
+     * @param {number[]} array: list of component ids
+     * @param {number} id: a component id
+     * @returns {boolean}: True if id is array; False otherwise
+     */
     containsElement: function (array, id) {
         for (let i = 0; i < array.length; i++) {
 
@@ -218,6 +259,12 @@ var scriptManager = {
         return false;
     },
 
+    /**
+     * Create an object for the content script given by its id
+     * @param {number} id: component ID
+     * @param {string} source: component source
+     * @returns {{id: {number}, source: {string}}}: component object
+     */
     createContentScriptEntry: function (id, source){
         return {
             id: id,
@@ -225,6 +272,12 @@ var scriptManager = {
         }
     },
 
+    /**
+     * Create an object for a CSS given by its id
+     * @param {number} id: component ID
+     * @param {string} css: CSS source
+     * @returns {{id: {number}, source: {string}}}: component object
+     */
     createContentCSSEntry: function (id, css){
         return {
             id: id,
