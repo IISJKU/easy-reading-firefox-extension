@@ -10,6 +10,7 @@ var classMapping = {
     'TippyTooltip': TippyTooltip,
     'TabSlideOutUserInterface': TabSlideOutUserInterface,
     'SpinnerBusyAnimation': SpinnerBusyAnimation,
+    'OverlayUserInterface': OverlayUserInterface,
 };
 
 var functionMapping = {

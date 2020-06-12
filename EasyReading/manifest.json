@@ -60,6 +60,7 @@
         "content/lib/alert-manager.js",
         "content/lib/global-event-listener.js",
         "content/lib/html-iterator.js",
+        "content/lib/iotypes.js",
         "content/lib/iotype-utils.js",
         "content/lib/sentence-tokenizer.js",
         "content/lib/page-utils.js",
@@ -103,7 +104,29 @@
       "css": [
         "lib/noty/noty.css",
         "lib/noty/themes/relax.css",
-        "lib/noty/priority.css"
+        "lib/noty/priority.css",
+        "content/lib/external/jquery-ui/jquery-ui.css",
+        "content/lib/external/micromodal/micromodal.css",
+        "content/lib/feedbackForm/feedbackForm.css",
+        "content/busy-animations/spinner/spinner.css",
+        "content/presentations/annotated-paragraph-switcher/annotated-paragraph-switcher.css",
+        "content/presentations/audio-highlighter/audio-highlighter.css",
+        "content/presentations/content-replacement-switcher/content-replacement-switcher.css",
+        "content/presentations/content-replacement-switcher/content-replacement-switcher.css",
+        "content/presentations/paragraph-switcher/paragraph-switcher.css",
+        "content/presentations/tippy-tooltip/tippy-tooltip.css",
+        "content/presentations/tippy-tooltip/light-border.css",
+        "content/widgets/auto-button/auto-button.css",
+        "content/widgets/auto-button/auto-button.css",
+        "content/widgets/button/button.css",
+        "content/widgets/continuous-choice-button/continuous-choice-button.css",
+        "content/widgets/single-choice-button/single-choice-button.css",
+        "content/widgets/text-selector/text-selector.css",
+        "content/widgets/two-state-button/two-state-button.css",
+        "content/user-interfaces/tab-slide-out/erMobileToolTips.css",
+        "content/user-interfaces/overlay/overlay-ui.css",
+        "content/user-interfaces/tab-slide-out/erTabSlideOut.css",
+        "content/user-interfaces/tab-slide-out/tab-slide-out-ui.css"
       ]
     }
   ],
