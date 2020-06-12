@@ -1,0 +1,9 @@
+.easy-reading-two-state-button>img{
+    max-width: 100%;
+}
+
+.easy-reading-two-state-button{
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+    padding: 0 !important;
+}

@@ -1,0 +1,21 @@
+mark.highlight-word{
+    background: orange;
+    color: black;
+}
+
+span.highlight-sentence{
+    background: #fff81f;
+    color: black;
+}
+
+.highlight-audio{
+    background: #fff81f;
+    color: black;
+}
+
+.word-highlighter{
+
+    padding: 4px !important;
+    border-radius: 4px !important;
+
+}

@@ -1,0 +1,14 @@
+.easy-reading-continuous-choice>img{
+    max-width: 100% !important;
+}
+
+.easy-reading-continuous-choice-active{
+    background-color: #ffc679 !important;
+}
+
+.easy-reading-continuous-choice{
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+    padding: 0 !important;
+}
+
