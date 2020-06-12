@@ -1,0 +1,10 @@
+#overlay-top,#overlay-bottom {
+    position: fixed !important;
+    top: 0;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5) !important;
+    z-index: 9999;
+    display: block;
+}

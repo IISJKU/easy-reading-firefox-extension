@@ -73,6 +73,7 @@
         "content/components/presentation-implementation.js",
         "content/components/user-interface-implementation.js",
         "content/components/widget-implementation.js",
+        "content/components/busy-animation-implementation.js",
         "content/widgets/auto-button/auto-button.js",
         "content/widgets/button/button.js",
         "content/widgets/continuous-choice-button/continuous-choice-button.js",
@@ -87,7 +88,16 @@
         "content/presentations/audio-highlighter/audio-highlighter.js",
         "content/presentations/content-replacement-switcher/content-replacement-switcher.js",
         "content/presentations/paragraph-switcher/paragraph-switcher.js",
-        "content/presentations/tippy-tooltip/tippy-tooltip.js"
+        "content/presentations/tippy-tooltip/tippy-tooltip.js",
+        "content/engines/colorize/colorize.js",
+        "content/engines/font-magnification-tool/font-magnification-tool.js",
+        "content/engines/line-spacing-tool/line-spacing-tool.js",
+        "content/engines/readability/Readability-readerable.js",
+        "content/engines/readability/readabilityController.js",
+        "content/engines/readability/Readability.js",
+        "content/engines/screen-ruler/screen-ruler.js",
+        "content/busy-animations/spinner/spinner.js",
+        "content/classMapping.js"
 
       ],
       "css": [

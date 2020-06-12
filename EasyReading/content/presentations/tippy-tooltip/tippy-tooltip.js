@@ -108,6 +108,3 @@ class TippyTooltip extends Presentation {
 
 
 }
-
-
-console.log("AND TIPPY LOADED");

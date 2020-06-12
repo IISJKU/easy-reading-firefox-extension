@@ -102,6 +102,7 @@ var background = {
                                     browser.tabs.sendMessage(tab.id, m);
 
                                 } else {
+                                    /*
                                     for (let i = 0; i < scriptManager.contentScripts.length; i++) {
                                         try {
                                             await browser.tabs.executeScript(tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
@@ -117,7 +118,7 @@ var background = {
                                             console.log(error);
                                         }
 
-                                    }
+                                    } */
 
                                     browser.tabs.sendMessage(tab.id, m);
 
@@ -196,6 +197,7 @@ var background = {
                         if (portManager.ports[k].startUpComplete) {
                             let tabId = portManager.ports[k].p.sender.tab.id;
 
+                            /*
                             for (let i = 0; i < scriptManager.updatedContentScripts.length; i++) {
                                 try {
                                     await browser.tabs.executeScript(tabId, {code: (atob(scriptManager.updatedContentScripts[i].source))});
@@ -211,7 +213,7 @@ var background = {
                                     console.log(error);
                                 }
 
-                            }
+                            }*/
                             message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);
                             portManager.ports[k].p.postMessage(message);
 
@@ -663,6 +665,7 @@ browser.runtime.onConnect.addListener(function (p) {
                             console.log(m);
                             currentPort.postMessage(m);
                         } else {
+                            /*
                             for (let i = 0; i < scriptManager.contentScripts.length; i++) {
                                 try {
                                     await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
@@ -679,6 +682,7 @@ browser.runtime.onConnect.addListener(function (p) {
                                 }
 
                             }
+                            */
 
                             m.data = JSON.parse(JSON.stringify(scriptManager));
                             m.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(p.sender.tab.id);

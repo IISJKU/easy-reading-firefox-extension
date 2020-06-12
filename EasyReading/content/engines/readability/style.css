@@ -1,0 +1,45 @@
+
+.er-readability-background{
+    all: revert;
+
+}
+
+.er-readability-style-revert{
+    all: revert;
+}
+
+.er-readability-body{
+    all:revert !important;
+}
+
+.er-readability-hidden{
+    display: none !important;
+}
+
+.er-readability-container {
+    max-width: 40%;
+    margin: 0 auto;
+    background: white;
+    font-size: 24px;
+    line-height: 2.2em;
+    height: auto;
+}
+
+
+.er-readability-container table {
+    border-collapse: collapse;
+}
+
+.er-readability-container table, .er-readability-container th,.er-readability-container td {
+    border: 1px solid black;
+}
+
+.er-readability-container br{
+
+    margin-bottom: 20px;
+}
+
+.er-readability-container p{
+
+    margin-bottom: 30px;
+}
