@@ -184,13 +184,8 @@ let requestManager = {
         let request = this.getRequestForResult(result);
 
         if (request) {
-            if (result.outputType === JavaScriptType.className) {
-                eval(result.result.script);
-            } else {
-
-                result.result = ioTypeUtils.toIOTypeInstance(result.result);
-                easyReading.userInterfaces[request.uiId].tools[request.toolId].presentation.renderResult(request, result);
-            }
+            result.result = ioTypeUtils.toIOTypeInstance(result.result);
+            easyReading.userInterfaces[request.uiId].tools[request.toolId].presentation.renderResult(request, result);
 
             easyReading.userInterfaces[request.uiId].tools[request.toolId].widget.requestFinished();
 

@@ -9,6 +9,7 @@ var classMapping = {
     'ParagraphSwitcher': ParagraphSwitcher,
     'TippyTooltip': TippyTooltip,
     'AnnotatedParagraphSwitcher': AnnotatedParagraphSwitcher,
+    'OverlayUserInterface': OverlayUserInterface,
     'TabSlideOutUserInterface': TabSlideOutUserInterface,
     'SpinnerBusyAnimation': SpinnerBusyAnimation,
 };

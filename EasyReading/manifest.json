@@ -22,7 +22,6 @@
     "*://www.googleapis.com/*",
     "*://accounts.google.com/*"
   ],
-  "content_security_policy": "script-src 'self' 'unsafe-eval' https://localhost https://easyreading-cloud.eu/ https://dev.easyreading-cloud.eu/ ; object-src 'self'",
   "background": {
     "scripts": [
       "lib/jquery/jquery.js",
