@@ -24,7 +24,7 @@
   ],
   "background": {
     "scripts": [
-      "lib/jquery/jquery.js",
+      "lib/jquery/jquery-3.5.1.min.js",
       "lib/tf/tf.min.js",
       "background/easy-reading.js",
       "background/silent-login.js",
@@ -45,7 +45,7 @@
         "<all_urls>"
       ],
       "js": [
-        "lib/jquery/jquery.js",
+        "lib/jquery/jquery-3.5.1.min.js",
         "lib/noty/noty.js",
         "content/content-script.js",
         "content/tracking-dialog.js",
