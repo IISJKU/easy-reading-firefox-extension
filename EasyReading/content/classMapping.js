@@ -1,4 +1,3 @@
-
 var classMapping = {
     'ContinuousChoiceButton': ContinuousChoiceButton,
     'AudioHighlighter': AudioHighlighter,
@@ -7,10 +6,11 @@ var classMapping = {
     'TwoStateButton': TwoStateButton,
     'Button': Button,
     'SingleChoiceButton': SingleChoiceButton,
+    'ParagraphSwitcher': ParagraphSwitcher,
     'TippyTooltip': TippyTooltip,
+    'AnnotatedParagraphSwitcher': AnnotatedParagraphSwitcher,
     'TabSlideOutUserInterface': TabSlideOutUserInterface,
     'SpinnerBusyAnimation': SpinnerBusyAnimation,
-    'OverlayUserInterface': OverlayUserInterface,
 };
 
 var functionMapping = {

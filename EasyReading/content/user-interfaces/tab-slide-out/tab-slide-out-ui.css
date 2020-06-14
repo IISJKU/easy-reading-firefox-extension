@@ -3,7 +3,7 @@
 }
 
 #er-tab-slide-out-handle {
-    background: url("images/logo_w.png") no-repeat center;
+    background:  url('moz-extension://__MSG_@@extension_id__/content/user-interfaces/tab-slide-out/img/logo_w.png') no-repeat center;
 }
 
 .tab-slide-out-animated{

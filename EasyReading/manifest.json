@@ -109,6 +109,8 @@
         "content/lib/external/micromodal/micromodal.css",
         "content/lib/feedbackForm/feedbackForm.css",
         "content/busy-animations/spinner/spinner.css",
+        "content/engines/readability/style.css",
+        "content/engines/screen-ruler/screen-ruler.css",
         "content/presentations/annotated-paragraph-switcher/annotated-paragraph-switcher.css",
         "content/presentations/audio-highlighter/audio-highlighter.css",
         "content/presentations/content-replacement-switcher/content-replacement-switcher.css",
@@ -142,5 +144,8 @@
     "default_title": "Easy Reading"
 
   },
+  "web_accessible_resources": [
+    "content/user-interfaces/tab-slide-out/img/logo_w.png"
+  ],
   "default_locale": "en"
 }
