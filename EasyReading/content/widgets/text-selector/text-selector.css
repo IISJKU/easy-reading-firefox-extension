@@ -1,0 +1,14 @@
+.easy-reading-button>img{
+    max-width: 100%;
+}
+
+.easy-reading-button{
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+    padding: 0 !important;
+}
+
+.easy-reading-text-selector-active{
+    background-color: #ffc679;
+    padding: 0 !important;
+}

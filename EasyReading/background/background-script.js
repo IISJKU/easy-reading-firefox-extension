@@ -96,32 +96,7 @@ var background = {
                         if (!easyReading.isIgnoredUrl(tab.url) && !tab.url.startsWith("about:")) {
 
                             if (tab.status === "complete") {
-
-                                if (scriptManager.debugMode) {
-
-                                    browser.tabs.sendMessage(tab.id, m);
-
-                                } else {
-                                    for (let i = 0; i < scriptManager.contentScripts.length; i++) {
-                                        try {
-                                            await browser.tabs.executeScript(tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
-                                        } catch (error) {
-                                            console.log(error);
-                                        }
-
-                                    }
-                                    for (let i = 0; i < scriptManager.contentCSS.length; i++) {
-                                        try {
-                                            await browser.tabs.insertCSS(tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
-                                        } catch (error) {
-                                            console.log(error);
-                                        }
-
-                                    }
-
-                                    browser.tabs.sendMessage(tab.id, m);
-
-                                }
+                                browser.tabs.sendMessage(tab.id, m);
                             }
                         }
                     }
@@ -169,56 +144,24 @@ var background = {
                 };
 
 
+                for (let k = 0; k < portManager.ports.length; k++) {
 
+                    console.log(portManager.ports[k].p.sender.tab.url.indexOf("client/function-overview") !== -1);
 
-                if (scriptManager.debugMode) {
+                    //! HACK: needs to be fixed. custom functions do not load sometimes without this. due to race condition.....
+                    if (portManager.ports[k].p.sender.tab.status === "loading" && portManager.ports[k].p.sender.tab.url.indexOf("client/function-overview") !== -1) {
+                        continue;
+                    }
 
-                    for (let i = 0; i < portManager.ports.length; i++) {
-                        if (portManager.ports[i].startUpComplete) {
+                    if (portManager.ports[k].startUpComplete) {
+                        let tabId = portManager.ports[k].p.sender.tab.id;
 
-                            message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[i].p.sender.tab.id);
-                            portManager.ports[i].p.postMessage(message);
-                        }
+                        message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);
+                        portManager.ports[k].p.postMessage(message);
+
 
                     }
 
-                } else {
-
-                    for (let k = 0; k < portManager.ports.length; k++) {
-
-                        console.log(portManager.ports[k].p.sender.tab.url.indexOf("client/function-overview") !== -1);
-
-                        //! HACK: needs to be fixed. custom functions do not load sometimes without this. due to race condition.....
-                        if (portManager.ports[k].p.sender.tab.status === "loading" && portManager.ports[k].p.sender.tab.url.indexOf("client/function-overview") !== -1) {
-                            continue;
-                        }
-
-                        if (portManager.ports[k].startUpComplete) {
-                            let tabId = portManager.ports[k].p.sender.tab.id;
-
-                            for (let i = 0; i < scriptManager.updatedContentScripts.length; i++) {
-                                try {
-                                    await browser.tabs.executeScript(tabId, {code: (atob(scriptManager.updatedContentScripts[i].source))});
-                                } catch (error) {
-                                    console.log(error);
-                                }
-
-                            }
-                            for (let i = 0; i < scriptManager.updatedContentCSS.length; i++) {
-                                try {
-                                    await browser.tabs.insertCSS(tabId, {code: (atob(scriptManager.updatedContentCSS[i].css))});
-                                } catch (error) {
-                                    console.log(error);
-                                }
-
-                            }
-                            message.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(portManager.ports[k].p.sender.tab.id);
-                            portManager.ports[k].p.postMessage(message);
-
-
-                        }
-
-                    }
                 }
 
 
@@ -657,34 +600,9 @@ browser.runtime.onConnect.addListener(function (p) {
                 case "getUserProfile":
                     console.log("GETTING PROFILE");
                     if (scriptManager.profileReceived) {
-                        if (scriptManager.debugMode) {
-                            m.data = JSON.parse(JSON.stringify(scriptManager));
-                            m.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(p.sender.tab.id);
-                            console.log(m);
-                            currentPort.postMessage(m);
-                        } else {
-                            for (let i = 0; i < scriptManager.contentScripts.length; i++) {
-                                try {
-                                    await browser.tabs.executeScript(p.sender.tab.id, {code: (atob(scriptManager.contentScripts[i].source))});
-                                } catch (error) {
-                                    console.log(error);
-                                }
-
-                            }
-                            for (let i = 0; i < scriptManager.contentCSS.length; i++) {
-                                try {
-                                    await browser.tabs.insertCSS(p.sender.tab.id, {code: (atob(scriptManager.contentCSS[i].css))});
-                                } catch (error) {
-                                    console.log(error);
-                                }
-
-                            }
-
-                            m.data = JSON.parse(JSON.stringify(scriptManager));
-                            m.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(p.sender.tab.id);
-                            currentPort.postMessage(m);
-
-                        }
+                        m.data = JSON.parse(JSON.stringify(scriptManager));
+                        m.data.uiCollection.uiTabConfig = tabUiConfigManager.getConfigForTab(p.sender.tab.id);
+                        currentPort.postMessage(m);
                     }
 
                     break;

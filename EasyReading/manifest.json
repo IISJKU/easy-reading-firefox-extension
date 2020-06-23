@@ -22,10 +22,9 @@
     "*://www.googleapis.com/*",
     "*://accounts.google.com/*"
   ],
-  "content_security_policy": "script-src 'self' 'unsafe-eval' https://localhost https://easyreading-cloud.eu/ https://dev.easyreading-cloud.eu/ ; object-src 'self'",
   "background": {
     "scripts": [
-      "lib/jquery/jquery.js",
+      "lib/jquery/jquery-3.5.1.min.js",
       "lib/tf/tf.min.js",
       "background/easy-reading.js",
       "background/silent-login.js",
@@ -46,15 +45,89 @@
         "<all_urls>"
       ],
       "js": [
-        "lib/jquery/jquery.js",
+        "lib/jquery/jquery-3.5.1.min.js",
         "lib/noty/noty.js",
         "content/content-script.js",
-        "content/tracking-dialog.js"
+        "content/tracking-dialog.js",
+        "content/lib/external/jquery-ui/jquery-ui.js",
+        "content/lib/external/micromodal/micromodal.min.js",
+        "content/lib/external/imagesloaded.pkgd.js",
+        "content/lib/external/popper.min.js",
+        "content/lib/external/tippy.min.js",
+        "content/lib/external/xregexp-all.js",
+        "content/lib/feedbackForm/feedbackForm.js",
+        "content/lib/alert-manager.js",
+        "content/lib/global-event-listener.js",
+        "content/lib/html-iterator.js",
+        "content/lib/iotypes.js",
+        "content/lib/iotype-utils.js",
+        "content/lib/sentence-tokenizer.js",
+        "content/lib/page-utils.js",
+        "content/lib/recommendationDialog.js",
+        "content/lib/request-manager.js",
+        "content/lib/sbd.js",
+        "content/lib/start-up.js",
+        "content/lib/sweetalert2.all.js",
+        "content/lib/text-marker.js",
+        "content/lib/ui-update-manager.js",
+        "content/components/presentation-implementation.js",
+        "content/components/user-interface-implementation.js",
+        "content/components/widget-implementation.js",
+        "content/components/busy-animation-implementation.js",
+        "content/widgets/auto-button/auto-button.js",
+        "content/widgets/button/button.js",
+        "content/widgets/continuous-choice-button/continuous-choice-button.js",
+        "content/widgets/single-choice-button/single-choice-button.js",
+        "content/widgets/text-selector/text-selector.js",
+        "content/widgets/two-state-button/two-state-button.js",
+        "content/user-interfaces/overlay/overlay-ui.js",
+        "content/user-interfaces/tab-slide-out/erMobileToolTips.js",
+        "content/user-interfaces/tab-slide-out/erTabSlideOut.js",
+        "content/user-interfaces/tab-slide-out/tab-slide-out-ui.js",
+        "content/presentations/annotated-paragraph-switcher/annotated-paragraph-switcher.js",
+        "content/presentations/audio-highlighter/audio-highlighter.js",
+        "content/presentations/content-replacement-switcher/content-replacement-switcher.js",
+        "content/presentations/paragraph-switcher/paragraph-switcher.js",
+        "content/presentations/tippy-tooltip/tippy-tooltip.js",
+        "content/engines/colorize/colorize.js",
+        "content/engines/font-magnification-tool/font-magnification-tool.js",
+        "content/engines/line-spacing-tool/line-spacing-tool.js",
+        "content/engines/readability/Readability-readerable.js",
+        "content/engines/readability/readabilityController.js",
+        "content/engines/readability/Readability.js",
+        "content/engines/screen-ruler/screen-ruler.js",
+        "content/busy-animations/spinner/spinner.js",
+        "content/classMapping.js"
+
       ],
       "css": [
         "lib/noty/noty.css",
         "lib/noty/themes/relax.css",
-        "lib/noty/priority.css"
+        "lib/noty/priority.css",
+        "content/lib/external/jquery-ui/jquery-ui.css",
+        "content/lib/external/micromodal/micromodal.css",
+        "content/lib/feedbackForm/feedbackForm.css",
+        "content/busy-animations/spinner/spinner.css",
+        "content/engines/readability/style.css",
+        "content/engines/screen-ruler/screen-ruler.css",
+        "content/presentations/annotated-paragraph-switcher/annotated-paragraph-switcher.css",
+        "content/presentations/audio-highlighter/audio-highlighter.css",
+        "content/presentations/content-replacement-switcher/content-replacement-switcher.css",
+        "content/presentations/content-replacement-switcher/content-replacement-switcher.css",
+        "content/presentations/paragraph-switcher/paragraph-switcher.css",
+        "content/presentations/tippy-tooltip/tippy-tooltip.css",
+        "content/presentations/tippy-tooltip/light-border.css",
+        "content/widgets/auto-button/auto-button.css",
+        "content/widgets/auto-button/auto-button.css",
+        "content/widgets/button/button.css",
+        "content/widgets/continuous-choice-button/continuous-choice-button.css",
+        "content/widgets/single-choice-button/single-choice-button.css",
+        "content/widgets/text-selector/text-selector.css",
+        "content/widgets/two-state-button/two-state-button.css",
+        "content/user-interfaces/tab-slide-out/erMobileToolTips.css",
+        "content/user-interfaces/overlay/overlay-ui.css",
+        "content/user-interfaces/tab-slide-out/erTabSlideOut.css",
+        "content/user-interfaces/tab-slide-out/tab-slide-out-ui.css"
       ]
     }
   ],
@@ -70,5 +143,8 @@
     "default_title": "Easy Reading"
 
   },
+  "web_accessible_resources": [
+    "content/user-interfaces/tab-slide-out/img/logo_w.png"
+  ],
   "default_locale": "en"
 }

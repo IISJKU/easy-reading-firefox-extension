@@ -1,0 +1,32 @@
+#er-tab-slide-out-handle {
+    position: absolute;
+    padding: 7px;
+    border: 2px solid black;
+    -webkit-background-size: contain;
+    -moz-background-size: contain;
+    -o-background-size: contain;
+    background-size: contain;
+    background-size: 100% !important;    
+}
+
+#er-tab-slide-out-grid-container {
+    display: grid;
+    grid-template-columns: auto auto;
+}
+
+#er-tab-slide-out-special-button-container {
+    display: grid;
+    grid-template-columns: 80px 80px;   
+}
+
+#er-tab-slide-out {
+    background-color: white;
+    position: fixed;
+}
+
+.er-tab-slide-out-grid-horizontal {
+    display: flex !important;
+    min-width: 98px !important;
+    max-width: 100% !important;
+    float: left;
+}

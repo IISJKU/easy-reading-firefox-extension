@@ -1,0 +1,8 @@
+.erToolTip {
+    position: absolute;
+    z-index: 100;
+    color: black;
+    background-color: silver;
+    border: 2px solid darkblue;
+    padding: 2px;
+}
