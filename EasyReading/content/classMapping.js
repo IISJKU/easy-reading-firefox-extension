@@ -12,6 +12,7 @@ var classMapping = {
     'OverlayUserInterface': OverlayUserInterface,
     'TabSlideOutUserInterface': TabSlideOutUserInterface,
     'SpinnerBusyAnimation': SpinnerBusyAnimation,
+    'TextSelector': TextSelector,
 };
 
 var functionMapping = {
