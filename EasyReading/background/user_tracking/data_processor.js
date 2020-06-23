@@ -34,6 +34,29 @@ function preProcessSample(labels, sample) {
 }
 
 /**
+ * Given a batch of samples, yield individual samples
+ * @param {Object.} batch: a batch of tracking samples output by an EasyReading AsTeRICS model
+ */
+function* splitBatch(batch) {
+    if ('samples' in batch) {
+        for (let i=0; i<batch['samples'].length; i++) {
+            let sample = batch['samples'][i];
+            let labels = Object.keys(sample);
+            let features = Object.values(sample);
+            if (!labels || !features) {
+                continue;
+            }
+            yield {
+                'labels': labels,
+                'features': features,
+            }
+        }
+    } else {
+        yield batch;  // Backwards compatibility with online model
+    }
+}
+
+/**
  * Get representative gaze position for the given samples. Usually, the x and y coordinates of the longest fixation
  * performed by the user given a batch of samples.
  * @param {string[]} labels: ordered list of feature names
@@ -87,7 +110,7 @@ function get_gaze(labels, samples, x_offset=0, y_offset=0) {
 
 /**
  * Bin a given eye fixation duration into categories
- * @param {number }fix_ms: fixation duration, in milliseconds.
+ * @param {number} fix_ms: fixation duration, in milliseconds.
  * @returns {string} Binned category
  */
 function bin_fixation_ms(fix_ms) {

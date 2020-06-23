@@ -228,32 +228,47 @@ class EasyReadingReasoner {
             // console.log('Ignore tracking data because reasoner paused.');
             return EasyReadingReasoner.A.ignore;
         }
-        const labels = Object.keys(message);  // Array keys; not sample labels!
-        const features = Object.values(message);
-        if (!labels || !features) {
-            return EasyReadingReasoner.A.ignore;
-        }
+
         let action = null;
-        this.feature_names = labels;  // Precondition: all messages carry same labels
-        // Push sample to corresponding buffer
-        if (this.collect_t === 'before') {
-            let n = this.s_buffer.push(features);
-            if (n > this.BUFFER_BEFORE_SIZE) {
-                this.s_buffer.shift();
+
+        // Process input batch
+        const sample_generator = splitBatch(message);
+        while (true) {
+            let s = sample_generator.next();
+            if (s.done) {
+                break;
             }
-            if (!this.waiting_feedback) {
-                let state = preProcessSample(labels, this.aggregateStates(this.s_buffer));
-                if (state) {
-                    this.updateGazeInfo(labels);  // Save gaze position of current state
-                    action = this.predict(state);
+            this.feature_names = s.value.labels;  // Precondition: all messages carry same labels
+            let features = s.value.features;
+            // Push sample to corresponding buffer
+            if (this.collect_t === 'before') {
+                console.log('Push before');
+                console.log(s.value.labels);
+                console.log(features);
+                let n = this.s_buffer.push(features);
+                if (n > this.BUFFER_BEFORE_SIZE) {
+                    this.s_buffer.shift();
+                }
+            } else {
+                console.log('Push after');
+                console.log(s.value.labels);
+                console.log(features);
+                let n = this.s_next_buffer.push(features);
+                if (n > this.BUFFER_AFTER_SIZE) {
+                    this.s_next_buffer.shift();
                 }
             }
-        } else {  // Collecting next state; take no action
-            let n = this.s_next_buffer.push(features);
-            if (n > this.BUFFER_AFTER_SIZE) {
-                this.s_next_buffer.shift();
-            }
         }
+
+        // Take action according to samples
+        if (this.feature_names.length > 0 && this.collect_t === 'before' && !this.waiting_feedback) {
+            let state = preProcessSample(this.feature_names, this.aggregateStates(this.s_buffer));
+            if (state) {
+                this.updateGazeInfo(this.feature_names);  // Save gaze position of current state
+                action = this.predict(state);
+            }
+        } // Otherwise take no action, we are collecting next state
+
         return action;
     }
 
