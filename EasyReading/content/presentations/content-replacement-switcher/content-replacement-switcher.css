@@ -1,8 +1,16 @@
+.er-content-replacement-ui{
+    display: table;
+}
+.er-content-replacement-ui>span{
+    display: table-row;
+}
 
 .er-toggle-button {
+    display: table-cell;
+    float: left;
     background-color: transparent;
-    width: 75px !important;
-    height: 75px !important;
+    width: 50px !important;
+    height: 50px !important;
     perspective: 1000px;
     -webkit-transition: border 0.1s linear, box-shadow 0.2s linear;
     -moz-transition: border 0.1s linear, box-shadow 0.2s linear;
@@ -11,9 +19,9 @@
     margin: 10px !important;
     padding: 0 !important;
 }
-.er-toggle-button-inner>div>img{
-    width: 75px !important;
-    height: 75px !important;
+.er-toggle-button-inner>span>img{
+    width: 50px !important;
+    height: 50px !important;
 }
 
 .er-toggle-button.animation-active {
@@ -23,6 +31,7 @@
 }
 
 .er-toggle-button-inner {
+    display: block;
     position: relative;
     width: 100%;
     height: 100%;
@@ -46,11 +55,42 @@
 }
 
 .er-toggle-button-front {
+    display: block;
     background-color: #bbb;
     color: black;
 }
 
 .er-toggle-button-back {
-
+    display: block;
     transform: rotateY(180deg);
 }
+
+.er-toggle-button-ui-container{
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.er-toggle-button-ui-container>button{
+    max-width: 25px !important;
+    max-height: 25px !important;
+    width: 25px !important;
+    height: 25px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: inherit !important;
+    border: none;
+}
+
+.er-toggle-button-ui-container>button:hover{
+    cursor: pointer;
+    background: #2276d2 !important;
+}
+
+.er-toggle-button-ui-container>button>img{
+    max-width: 25px !important;
+    max-height: 25px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+
