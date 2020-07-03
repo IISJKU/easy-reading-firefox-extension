@@ -8609,10 +8609,10 @@
                 } else {
                     switch ( format.charAt( iFormat ) ) {
                         case "d": case "m": case "y": case "@":
-                        chars += "0123456789";
-                        break;
+                            chars += "0123456789";
+                            break;
                         case "D": case "M":
-                        return null; // Accept anything
+                            return null; // Accept anything
                         case "'":
                             if ( lookAhead( "'" ) ) {
                                 chars += "'";
@@ -8694,17 +8694,17 @@
                     while ( matches ) {
                         switch ( matches[ 2 ] || "d" ) {
                             case "d" : case "D" :
-                            day += parseInt( matches[ 1 ], 10 ); break;
+                                day += parseInt( matches[ 1 ], 10 ); break;
                             case "w" : case "W" :
-                            day += parseInt( matches[ 1 ], 10 ) * 7; break;
+                                day += parseInt( matches[ 1 ], 10 ) * 7; break;
                             case "m" : case "M" :
-                            month += parseInt( matches[ 1 ], 10 );
-                            day = Math.min( day, $.datepicker._getDaysInMonth( year, month ) );
-                            break;
+                                month += parseInt( matches[ 1 ], 10 );
+                                day = Math.min( day, $.datepicker._getDaysInMonth( year, month ) );
+                                break;
                             case "y": case "Y" :
-                            year += parseInt( matches[ 1 ], 10 );
-                            day = Math.min( day, $.datepicker._getDaysInMonth( year, month ) );
-                            break;
+                                year += parseInt( matches[ 1 ], 10 );
+                                day = Math.min( day, $.datepicker._getDaysInMonth( year, month ) );
+                                break;
                         }
                         matches = pattern.exec( offset );
                     }
@@ -18357,8 +18357,8 @@
             var that = this,
                 target = $( event ? event.target : this.element )
 
-                // we need closest here due to mouseover bubbling,
-                // but always pointing at the same event target
+                    // we need closest here due to mouseover bubbling,
+                    // but always pointing at the same event target
                     .closest( this.options.items );
 
             // No element to show a tooltip for or the tooltip is already open

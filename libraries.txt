@@ -1,0 +1,17 @@
+https://extensionworkshop.com/documentation/publish/third-party-library-usage/
+
+Links for external libraries: 
+
+"lib/jquery/jquery-3.5.1.min.js" - https://code.jquery.com/jquery-3.5.1.min.js
+"lib/noty/noty.js" -
+"lib/tf/tf.min.js" -
+"content/engines/readability/Readability-readerable.js" - https://github.com/mozilla/readability -> https://github.com/mozilla/readability/blob/master/Readability.js
+"content/engines/readability/Readability.js" - https://github.com/mozilla/readability -> https://github.com/mozilla/readability/blob/master/Readability-readerable.js
+"content/lib/external/jquery-ui/jquery-ui.js", - https://jqueryui.com/resources/download/jquery-ui-1.12.1.zip
+"content/lib/external/micromodal/micromodal.min.js" - https://github.com/ghosh/Micromodal ->  https://unpkg.com/micromodal@0.4.6/dist/micromodal.min.js
+"content/lib/external/imagesloaded.pkgd.js" - https://github.com/desandro/imagesloaded -> https://github.com/desandro/imagesloaded/blob/v4.1.4/imagesloaded.pkgd.js
+"content/lib/external/popper.min.js" - https://github.com/atomiks/tippyjs -> https://unpkg.com/@popperjs/core@2.4.3/dist/umd/popper.min.js
+"content/lib/external/tippy.min.js" - https://github.com/atomiks/tippyjs -> https://unpkg.com/tippy.js@6.2.3/dist/tippy-bundle.umd.min.js
+"content/lib/external/xregexp-all.js" - https://github.com/slevithan/xregexp -> https://unpkg.com/xregexp@4.2.0/xregexp-all.js
+"content/lib/sbd.js" -   https://raw.githubusercontent.com/Tessmore/sbd -> https://raw.githubusercontent.com/Tessmore/sbd/master/dist/sbd.js
+"content/lib/sweetalert2.all.js" -  https://github.com/sweetalert2/sweetalert2 -> https://github.com/sweetalert2/sweetalert2/releases/tag/v8.14.0 Needs to be built with yarn: yarn install -> yarn start -> dist folder contains file

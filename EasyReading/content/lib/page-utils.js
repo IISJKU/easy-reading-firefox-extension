@@ -1136,7 +1136,7 @@ class TextSelection {
                                 "preserve_whitespace" : true,
                                 "abbreviations"      : null
                             };
-                            let sentences = er_tokenizer.sentences(currentBlock.text, options);
+                            let sentences = tokenizer.sentences(currentBlock.text, options);
 
 
                             //Sentence split possible

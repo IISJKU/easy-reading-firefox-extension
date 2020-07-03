@@ -63,7 +63,7 @@ function readability(req, config,widget) {
             $('#er-readability-container p').each(function () {
 
                 let html = $(this).html();
-                let sentences = er_tokenizer.sentences(html,options);
+                let sentences = tokenizer.sentences(html,options);
                 let sentencesWithBR = "";
                 for(let i=0; i < sentences.length; i++){
 
@@ -94,6 +94,7 @@ function readability(req, config,widget) {
             alertManager.showErrorAlert("Sorry I could not detect the content of the page.");
 
             widget.requestFailed(req,config);
+            return;
         }
 
 

@@ -108,6 +108,7 @@
         "content/lib/external/micromodal/micromodal.css",
         "content/lib/feedbackForm/feedbackForm.css",
         "content/busy-animations/spinner/spinner.css",
+        "content/lib/sweetalert2.css",
         "content/engines/readability/style.css",
         "content/engines/screen-ruler/screen-ruler.css",
         "content/presentations/annotated-paragraph-switcher/annotated-paragraph-switcher.css",
