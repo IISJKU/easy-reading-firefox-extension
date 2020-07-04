@@ -92,7 +92,7 @@ class AnnotatedParagraphSwitcher extends Presentation {
                                             popupHTML = '<img src=' + out.thumbnail.source + ' alt="' + out.title + '"><br>';
                                         }
                                         popupHTML += out.description;
-                                        
+
                                         tippy("#" + currentAnnotation.id, {
                                             content: popupHTML,
                                             animateFill: false,
