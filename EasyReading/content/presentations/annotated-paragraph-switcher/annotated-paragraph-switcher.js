@@ -89,16 +89,17 @@ class AnnotatedParagraphSwitcher extends Presentation {
                                     if (out.type !== "disambiguation" && out.description) {
                                         let popupHTML = "";
                                         if (out.thumbnail) {
-                                            popupHTML = '<img src="' + out.thumbnail.source + '" alt="' + out.title + '"><br>';
+                                            popupHTML = '<img src=' + out.thumbnail.source + ' alt="' + out.title + '"><br>';
                                         }
                                         popupHTML += out.description;
-
+                                        
                                         tippy("#" + currentAnnotation.id, {
                                             content: popupHTML,
                                             animateFill: false,
                                             animation: 'fade',
                                             flipOnUpdate: true,
                                             theme: 'light-border',
+                                            allowHTML: true,
 
                                         });
                                         $("#" + currentAnnotation.id).addClass("easy-reading-highlight");

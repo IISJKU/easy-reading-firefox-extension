@@ -1,6 +1,6 @@
 https://extensionworkshop.com/documentation/publish/third-party-library-usage/
 
-Links for external libraries: 
+Links for external libraries:
 
 "lib/jquery/jquery-3.5.1.min.js" - https://code.jquery.com/jquery-3.5.1.min.js
 "lib/noty/noty.js" -
