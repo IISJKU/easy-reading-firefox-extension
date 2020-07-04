@@ -3,8 +3,8 @@ https://extensionworkshop.com/documentation/publish/third-party-library-usage/
 Links for external libraries:
 
 "lib/jquery/jquery-3.5.1.min.js" - https://code.jquery.com/jquery-3.5.1.min.js
-"lib/noty/noty.js" -
-"lib/tf/tf.min.js" -
+"lib/noty/noty.js" - https://github.com/needim/noty/releases/tag/v3.2.0-beta (priority.css added for styling purposes)
+"lib/tf/tf.min.js" - https://www.npmjs.com/package/@tensorflow/tfjs/v/1.7.4 (install with npm: npm pack @tensorflow/tfjs/v/1.7.4)
 "content/engines/readability/Readability-readerable.js" - https://github.com/mozilla/readability -> https://github.com/mozilla/readability/blob/master/Readability.js
 "content/engines/readability/Readability.js" - https://github.com/mozilla/readability -> https://github.com/mozilla/readability/blob/master/Readability-readerable.js
 "content/lib/external/jquery-ui/jquery-ui.js", - https://jqueryui.com/resources/download/jquery-ui-1.12.1.zip
